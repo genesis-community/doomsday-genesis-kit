@@ -1,0 +1,11 @@
+---
+instance_groups:
+  - name: doomsday
+    properties:
+      backends:
+        - (( append ))
+        - type: tlsclient
+          name: (( grab genesis.env ))
+          properties:
+            hosts: (( grab meta.ocfp.fqdns ))
+

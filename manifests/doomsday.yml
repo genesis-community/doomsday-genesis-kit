@@ -7,13 +7,13 @@ instance_groups:
   - name:      doomsday
     instances: 1
     azs:       (( grab params.availability_zones || meta.default.azs ))
-    stemcell:  default
-    networks:  { name: (( grab params.network || "default" )) }
+    stemcell:  (( grab params.stemcell || "default" ))
+    networks:
+      - name:  (( grab params.network || "default" ))
     vm_type:   (( grab params.vm_type || "default" ))
 
     properties:
       debug: false
-
 
 update:
   serial:            false
@@ -29,7 +29,7 @@ stemcells:
     version: (( grab params.stemcell_version || "latest" ))
 
 releases:
-  - name: doomsday
-    version: (( param "The Kit Author forgot to fill out manifests/doomsday.yml" ))
-    sha1:    (( param "The Kit Author forgot to fill out manifests/doomsday.yml" ))
-    url:     (( param "The Kit Author forgot to fill out manifests/doomsday.yml" ))
+- name:    doomsday
+  version: 0.9.2
+  url:     https://github.com/doomsday-project/doomsday-boshrelease/releases/download/v0.9.2/doomsday-0.9.2.tgz
+  sha1:    e17a5ee70875a19926f80879e8baf9ac3244c981
