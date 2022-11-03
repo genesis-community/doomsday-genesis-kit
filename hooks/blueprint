@@ -1,29 +1,31 @@
 #!/bin/bash
 
 shopt -s nullglob
+
 set -eu
 
 declare -a merge
 
-merge+=( "merge/doomsday.yml" )
+fail() { echo "$@" >&2 ; exit 1 ; }
+
+merge+=( "manifests/doomsday.yml" )
 
 for feature in ${GENESIS_REQUESTED_FEATURES[@]}; do
   case "${feature}" in
-    (ocfp)
-      merge+=( "ocfp/ocfp.yml" )
-      ;;
-    (doomsday)
-      merge+=( merge/doomsday.yml )
-      ;;
     (*)
-      if [[ -f "$GENESIS_ROOT/ops/$__feature.yml" ]] ; then
-        merge+=( "$GENESIS_ROOT/ops/$__feature.yml" )
-      else
-        echo "Unknown feature: ${feature}"
-        exit 1
+      if [[ -s "$GENESIS_ROOT/ops/${feature}.yml" ]]
+      then merge+=( "$GENESIS_ROOT/ops/${feature}.yml" )
+      else fail "Unknown feature: '${feature}'"
       fi
       ;;
   esac
 done
+
+if want_feature ocfp
+then
+    merge+=( "ocfp/ocfp.yml" ) ;;
+    # TOOD: if `ocfp` then grab keys from {ocf,mgmt}/fqdns, loop over them and compose a dynamic tlsclient.yml with the hosts and add to the merge.
+    # Similar for other items to monitor, gather inventory and add to this.
+fi
 
 echo ${merge[@]}

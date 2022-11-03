@@ -7,14 +7,6 @@ meta:
     vault:
       tf: (( concat genesis.secrets_mount "tf/" genesis.vault_env ))
 
-    certs:
-      trusted:
-        - (( vault genesis.secrets_mount "certs/org:ca" )) # Organization CA, if exists
-        - (( vault genesis.secrets_mount "certs/dbs:ca" )) # External Databases CA
-
-    fqdns: []
-      #- (( vault meta.ocfp.vault.tf "/fqdns:concourse"))  # TODO: pull individual values
-
   doomsday:
     azs:
       - (( concat genesis.env "-z1" ))
@@ -22,6 +14,7 @@ meta:
       - (( concat genesis.env "-z3" ))
 
     disk_type: (( concat "default-" meta.ocfp.env.scale ))
+
     vm_type:   (( concat "default-" meta.ocfp.env.scale ))
 
     networks:
@@ -35,10 +28,24 @@ meta:
 ---
 instance_groups:
   - name: doomsday
+
     networks:
       - (( replace ))
-      -  name: (( concat genesis.env "-ocf" ))
+      - (( grab meta.doomsday.networks ))
+
     azs: (( grab meta.doomsday.azs ))
+
     vm_type: (( grab meta.doomsday.vm_type ))
+
     stemcell: (( grab meta.doomsday.stemcell.name ))
+
+    properties:
+      backends:
+        - (( append ))
+        - type: tlsclient
+          name: (( grab genesis.env ))
+          properties:
+            hosts: 
+              - (( append ))
+              - (( grab meta.tlsclient.fqdns ))
 

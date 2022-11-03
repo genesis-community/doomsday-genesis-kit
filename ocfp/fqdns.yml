@@ -1,11 +1,12 @@
 ---
-instance_groups:
-  - name: doomsday
-    properties:
-      backends:
-        - (( append ))
-        - type: tlsclient
-          name: (( grab genesis.env ))
-          properties:
-            hosts: (( grab meta.ocfp.fqdns ))
+meta:
+  tlsclient:
+    fqdns:
+      - (( vault meta.ocfp.vault.tf "/ocf/fqdns:doomsday" ))
+      - (( vault meta.ocfp.vault.tf "/ocf/fqdns:system" ))
+      - (( vault meta.ocfp.vault.tf "/ocf/fqdns:apps" ))
+      - (( vault meta.ocfp.vault.tf "/ocf/fqdns:shield" ))
+      - (( vault meta.ocfp.vault.tf "/ocf/fqdns:blacksmith" ))
+      - (( vault meta.ocfp.vault.tf "/ocf/fqdns:blacksmith" ))
+      #- (( vault meta.ocfp.vault.tf "/ocf/fqdns:stratos" ))
 
