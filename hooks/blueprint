@@ -12,6 +12,9 @@ merge+=( "manifests/doomsday.yml" )
 
 for feature in ${GENESIS_REQUESTED_FEATURES[@]}; do
   case "${feature}" in
+    (ocfp)
+      true
+      ;;
     (*)
       if [[ -s "$GENESIS_ROOT/ops/${feature}.yml" ]]
       then merge+=( "$GENESIS_ROOT/ops/${feature}.yml" )
@@ -21,11 +24,11 @@ for feature in ${GENESIS_REQUESTED_FEATURES[@]}; do
   esac
 done
 
+# TOOD: If `ocfp` then grab keys from {ocf,mgmt}/fqdns,
+#       loop over them and compose a dynamic tlsclient.yml add hosts to merge.
+#       Similarly for other items to monitor, gather inventory and add to this.
 if want_feature ocfp
-then
-    merge+=( "ocfp/ocfp.yml" ) ;;
-    # TOOD: if `ocfp` then grab keys from {ocf,mgmt}/fqdns, loop over them and compose a dynamic tlsclient.yml with the hosts and add to the merge.
-    # Similar for other items to monitor, gather inventory and add to this.
+then merge+=( "ocfp/ocfp.yml" )
 fi
 
 echo ${merge[@]}
