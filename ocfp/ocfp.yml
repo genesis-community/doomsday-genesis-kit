@@ -29,9 +29,7 @@ meta:
 instance_groups:
   - name: doomsday
 
-    networks:
-      - (( replace ))
-      - (( grab meta.doomsday.networks ))
+    networks: (( grab meta.doomsday.networks ))
 
     azs: (( grab meta.doomsday.azs ))
 

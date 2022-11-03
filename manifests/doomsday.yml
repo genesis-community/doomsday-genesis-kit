@@ -17,7 +17,6 @@ instance_groups:
         release: doomsday
         properties:
           debug: false
-      
 
 update:
   serial:            false
