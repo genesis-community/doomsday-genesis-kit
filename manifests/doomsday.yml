@@ -1,12 +1,13 @@
 ---
 meta:
-  default:
-    azs: [z1]
+  doomsday:
+    azs:
+      - z1
 
 instance_groups:
   - name:      doomsday
     instances: 1
-    azs:       (( grab params.availability_zones || meta.default.azs ))
+    azs:       (( grab params.availability_zones || meta.doomsday.azs ))
     stemcell:  (( grab params.stemcell || "default" ))
     networks:
       - name:  (( grab params.network || "default" ))
@@ -33,3 +34,4 @@ releases:
   version: 0.9.2
   url:     https://github.com/doomsday-project/doomsday-boshrelease/releases/download/v0.9.2/doomsday-0.9.2.tgz
   sha1:    e17a5ee70875a19926f80879e8baf9ac3244c981
+
