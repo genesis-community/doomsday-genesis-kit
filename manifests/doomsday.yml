@@ -5,16 +5,19 @@ meta:
       - z1
 
 instance_groups:
-  - name:      doomsday
+  - name: doomsday
     instances: 1
     azs:       (( grab params.availability_zones || meta.doomsday.azs ))
-    stemcell:  (( grab params.stemcell || "default" ))
     networks:
       - name:  (( grab params.network || "default" ))
     vm_type:   (( grab params.vm_type || "default" ))
-
-    properties:
-      debug: false
+    stemcell:  (( grab params.stemcell || "default" ))
+    jobs:
+      - name: doomsday
+        release: doomsday
+        properties:
+          debug: false
+      
 
 update:
   serial:            false
