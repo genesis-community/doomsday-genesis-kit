@@ -5,6 +5,7 @@ shopt -s nullglob
 set -eu
 
 declare -a merge
+declare -a opsfiles
 
 fail() { echo "$@" >&2 ; exit 1 ; }
 
@@ -17,7 +18,7 @@ for feature in ${GENESIS_REQUESTED_FEATURES[@]}; do
       ;;
     (*)
       if [[ -s "$GENESIS_ROOT/ops/${feature}.yml" ]]
-      then merge+=( "$GENESIS_ROOT/ops/${feature}.yml" )
+      then opsfiles+=( "$GENESIS_ROOT/ops/${feature}.yml" )
       else fail "Unknown feature: '${feature}'"
       fi
       ;;
@@ -30,5 +31,9 @@ done
 if want_feature ocfp
 then merge+=( "ocfp/ocfp.yml" )
 fi
+
+for opsfile in ${opsfiles[@]}
+do merge+=( "$opsfile" )
+done
 
 echo ${merge[@]}
