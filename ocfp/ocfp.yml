@@ -9,16 +9,14 @@ meta:
 
   doomsday:
     azs:
-      - (( concat genesis.env "-z1" ))
       - (( concat genesis.env "-z2" ))
-      - (( concat genesis.env "-z3" ))
 
     disk_type: (( concat "default-" meta.ocfp.env.scale ))
 
     vm_type:   (( concat "default-" meta.ocfp.env.scale ))
 
     networks:
-      - name: (( concat genesis.env "-ocf" ))
+      - name: (( concat genesis.env "-doomsday" ))
 
     stemcell:
       name:    (( grab params.stemcell_name    || "default" ))
