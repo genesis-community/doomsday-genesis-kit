@@ -16,7 +16,7 @@ meta:
     vm_type:   (( concat "default-" meta.ocfp.env.scale ))
 
     networks:
-      - name: (( concat genesis.env "-doomsday" ))
+      - name: (( concat genesis.env "-ocf" ))
 
     stemcell:
       name:    (( grab params.stemcell_name    || "default" ))
