@@ -6,7 +6,7 @@ if want_feature ocfp ; then
   for job in ${jobs[@]} ; do
     _vm_type="default-${_env_scale}"
     _disk_type="default-${_env_scale}"
-    _network="${GENESIS_ENVIRONMENT}-doomsday"
+    _network="${GENESIS_ENVIRONMENT}-ocf"
 
     cloud_config_needs vm_type   "$(lookup params.vm_type   ${_vm_type})"
     cloud_config_needs network   "$(lookup params.network   ${_network})"
