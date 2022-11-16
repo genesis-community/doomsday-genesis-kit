@@ -7,7 +7,7 @@ then
     _env_scale="$(lookup --partial meta.ocfp.env.scale)"
     _vm_type="default-${_env_scale}"
     _disk_type="default-${_env_scale}"
-    _network="${GENESIS_ENVIRONMENT}-ocf"
+    _network="${GENESIS_ENVIRONMENT}-doomsday"
   else # Legacy was hard coded
     _vm_type="small"
     _network="shield"
