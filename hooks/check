@@ -4,7 +4,7 @@ if [[ -n "$GENESIS_CLOUD_CONFIG" ]]
 then
   if want_feature ocfp
   then
-    _env_scale="$(lookup --partial meta.ocfp.env.scale)"
+    _env_scale="$(lookup params.ocfp_env_scale "dev")"
     _vm_type="default-${_env_scale}"
     _disk_type="default-${_env_scale}"
     _network="${GENESIS_ENVIRONMENT}-doomsday"
