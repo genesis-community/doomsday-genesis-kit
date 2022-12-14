@@ -1,39 +1,139 @@
 #!/bin/bash
 
-shopt -s nullglob
-
-set -eu
-
-declare -a merge
-declare -a opsfiles
-
+################################################################################
+# Functions
+################################################################################
 fail() { echo "$@" >&2 ; exit 1 ; }
 
-merge+=( "manifests/doomsday.yml" )
+bosh::deps() {
+  bosh deps --json | jq -r '.Tables[0].Rows[].name'
+}
 
-for feature in ${GENESIS_REQUESTED_FEATURES[@]}; do
+template::render() {
+  local OCFP_ENV_NAME=${1}
+  local OCFP_ENV_PATH=${OCFP_ENV_NAME//-/\/}
+  local template=${2}
+  local outfile=${3}
+
+  sed \
+    -e "s#{{OCFP_ENV_NAME}}#${OCFP_ENV_NAME}#g" \
+    -e "s#{{OCFP_ENV_PATH}}#${OCFP_ENV_PATH}#g" \
+    -e "s#{{OCFP_VAULT_PREFIX}}#${OCFP_VAULT_PREFIX}#g" \
+    < "${template}" > "${outfile}"
+  )
+}
+
+template::bosh::credhub() {
+  local outfile="dynamic/${OCFP_ENV_NAME}-bosh-credhub.yml"
+  local template="ocfp/templates/credhub.yml"
+  (
+  OCFP_ENV_NAME=${1}
+  OCFP_ENV_PATH=${OCFP_ENV_NAME//-/\/}
+
+  template::render ${OCFP_ENV_NAME} ${template} ${outfile}
+  )
+
+  yamls+=( "${outfile}" )
+}
+
+template::env::fqdns() {
+  local outfile="dynamic/${OCFP_ENV_NAME}-bosh-credhub.yml"
+  local template="ocfp/templates/fqdns.yml"
+  (
+  OCFP_ENV_NAME=${1}
+  OCFP_ENV_PATH=${OCFP_ENV_NAME//-/\/}
+
+  declare -a fqdns
+  fqdns=($({
+    safe get ${OCFP_VAULT_PREFIX}/tf/${OCFP_ENV_PATH}/ocf/fqdns
+    safe get ${OCFP_VAULT_PREFIX}/tf/${OCFP_ENV_PATH}/mgmt/fqdns
+    } 2>/dev/null | awk '/: /{print $2}';
+  ))
+
+  template::render ${OCFP_ENV_NAME} ${template} ${outfile}
+  for fqdn in "${fqdns[@]}" ; do echo "                  - ${fqdn}" ; done \
+    >> "${outfile}"
+
+  )
+
+  yamls+=( "${outfile}" )
+}
+
+template::env::vault() {
+  local outfile="dynamic/${OCFP_ENV_NAME}-vault.yml"
+  local template="ocfp/templates/vault.yml"
+  (
+  OCFP_ENV_NAME=${1}
+
+  if want_feature sharded-vault-paths
+  then
+    if [[ ${OCFP_ENV_NAME} != ${GENESIS_ENVIRONMENT} ]]
+    then # NOTE: Lookup base vault path for each environment
+      vault_prefix=$(
+      cat ${DEPLOYMENT_DIR}/bosh/.genesis/manifests/${OCFP_ENV_NAME}.yml |
+        spruce json | jq -r '.genesis.secrets_mount'
+      )
+      OCFP_VAULT_PREFIX=${vault_prefix}
+    fi
+  fi
+
+  template::render ${OCFP_ENV_NAME} ${template} ${outfile}
+  )
+
+  yamls+=( "${outfile}" )
+}
+
+################################################################################
+# Main
+################################################################################
+shopt -s nullglob
+set -eu
+
+declare feature env_name mgmt_env
+declare -a yamls opsfiles bosh_envs
+declare -x OCFP_VAULT_PREFIX="${OCFP_VAULT_PREFIX:-"secret/"}"
+
+DEPLOYMENTS_DIR="${DEPLOYMENTS_DIR:-"deployments"}"
+[[ -d "${DEPLOYMENTS_DIR}/bosh/.genesis/manifests" ]] ||
+  fail "No deployment manifests found at ${DEPLOYMENTS_DIR}/bosh/.genesis/manifests!"
+
+yamls=()
+opsfiles=()
+
+mkdir dynamic
+
+yamls+=( "manifests/doomsday.yml" )
+
+for feature in ${GENESIS_REQUESTED_FEATURES[@]}
+do
   case "${feature}" in
-    (ocfp)
-      true
-      ;;
+    (ocfp) true ;;
     (*)
       if [[ -s "$GENESIS_ROOT/ops/${feature}.yml" ]]
       then opsfiles+=( "$GENESIS_ROOT/ops/${feature}.yml" )
-      else fail "Unknown feature: '${feature}'"
+      else fail "Feature not found: '${feature}'"
       fi
       ;;
   esac
 done
 
-# TOOD: If `ocfp` then grab keys from {ocf,mgmt}/fqdns,
-#       loop over them and compose a dynamic tlsclient.yml add hosts to merge.
-#       Similarly for other items to monitor, gather inventory and add to this.
 if want_feature ocfp
-then merge+=( "ocfp/ocfp.yml" )
+then
+  yamls+=( "ocfp/ocfp.yml" )
+
+  mgmt_env=${GENESIS_ENVIRONMENT} 
+  bosh_envs=($(bosh::deps | grep -E '-bosh$' | sed -e 's/-bosh$//'))
+
+  for env_name in ${mgmt_env} "${bosh_envs[@]}"
+  do
+    template::render::bosh::credhub ${env_name}
+    template::render::env::fqdns ${env_name}
+    template::render::env::vault ${env_name}
+  done
 fi
 
-for opsfile in ${opsfiles[@]}
-do merge+=( "$opsfile" )
+for opsfile in "${opsfiles[@]}"
+do yamls+=( "$opsfile" )
 done
 
-echo ${merge[@]}
+echo ${yamls[@]}

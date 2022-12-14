@@ -5,7 +5,7 @@ meta:
       scale: (( grab params.ocfp_env_scale || "dev" ))
 
     vault:
-      tf: (( concat genesis.secrets_mount "tf/" genesis.vault_env ))
+      tf_path: (( concat genesis.secrets_mount "tf/" genesis.vault_env ))
 
   doomsday:
     azs:
@@ -34,14 +34,4 @@ instance_groups:
     vm_type: (( grab meta.doomsday.vm_type ))
 
     stemcell: (( grab meta.doomsday.stemcell.name ))
-
-#    properties:
-#      backends:
-#        - (( append ))
-#        - type: tlsclient
-#          name: (( grab genesis.env ))
-#          properties:
-#            hosts: 
-#              - (( append ))
-#              - (( grab meta.tlsclient.fqdns ))
 
