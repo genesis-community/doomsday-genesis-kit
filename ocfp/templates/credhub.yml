@@ -9,13 +9,13 @@ instance_groups:
             - type: credhub
               name: {{OCFP_ENV_NAME}}-credhub
               properties:
-                address:  (( vault "{{OCFP_VAULT_PREFIX}}/exodus/{{OCFP_ENV_PATH}}/bosh:credhub_url" )) 
-                ca_certs: (( vault "{{OCFP_VAULT_PREFIX}}/exodus/{{OCFP_ENV_PATH}}/bosh:credhub_ca_cert" )) 
+                address:  (( vault "{{OCFP_VAULT_PREFIX}}/exodus/{{OCFP_ENV_NAME}}/bosh:credhub_url" )) 
+                ca_certs: (( vault "{{OCFP_VAULT_PREFIX}}/exodus/{{OCFP_ENV_NAME}}/bosh:credhub_ca_cert" )) 
                 insecure_skip_verify: true
                 auth:
                   grant_type: password
-                  username: (( vault "{{OCFP_VAULT_PREFIX}}/exodus/{{OCFP_ENV_PATH}}/bosh:credhub_username" ))
-                  password: (( vault "{{OCFP_VAULT_PREFIX}}/exodus/{{OCFP_ENV_PATH}}/bosh:credhub_password" ))
+                  username: (( vault "{{OCFP_VAULT_PREFIX}}/exodus/{{OCFP_ENV_NAME}}/bosh:credhub_username" ))
+                  password: (( vault "{{OCFP_VAULT_PREFIX}}/exodus/{{OCFP_ENV_NAME}}/bosh:credhub_password" ))
                   #grant_type: client_credentials
-                  #client_id:     (( vault "{{OCFP_VAULT_PREFIX}}/exodus/{{OCFP_ENV_PATH}}/bosh:client_id" ))
-                  #client_secret: (( vault "{{OCFP_VAULT_PREFIX}}/exodus/{{OCFP_ENV_PATH}}/bosh:client_secret" ))
+                  #client_id:     (( vault "{{OCFP_VAULT_PREFIX}}/exodus/{{OCFP_ENV_NAME}}/bosh:client_id" ))
+                  #client_secret: (( vault "{{OCFP_VAULT_PREFIX}}/exodus/{{OCFP_ENV_NAME}}/bosh:client_secret" ))
