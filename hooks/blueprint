@@ -72,14 +72,10 @@ ocfp::vault::prefix() {
 
   if want_feature sharded-vault-paths
   then
-    if [[ ${OCFP_ENV_NAME} != ${GENESIS_ENVIRONMENT} ]]
-    then # NOTE: Lookup base vault path for each environment
-      vault_prefix=$(
-      cat ${DEPLOYOMENTS_DIR}/bosh/.genesis/manifests/${OCFP_ENV_NAME}.yml |
-        spruce json | jq -r '.genesis.secrets_mount'
-      )
-      OCFP_VAULT_PREFIX=${vault_prefix}
-    fi
+    OCFP_VAULT_PREFIX=$(
+    cat ${DEPLOYMENTS_PATH}/bosh/.genesis/manifests/${OCFP_ENV_NAME}.yml |
+      spruce json | jq -r '.genesis.secrets_mount'
+    )
   else
     OCFP_VAULT_PREFIX="secret/"
   fi
@@ -93,11 +89,11 @@ set -eu
 
 declare feature env_name mgmt_env
 declare -a yamls opsfiles ocf_envs
-declare -x OCFP_VAULT_PREFIX OCFP_ENV_NAME OCFP_ENV_PATH DEPLOYOMENTS_DIR
+declare -x OCFP_VAULT_PREFIX OCFP_ENV_NAME OCFP_ENV_PATH DEPLOYMENTS_PATH
 
-DEPLOYMENTS_DIR="${DEPLOYMENTS_DIR:-"${HOME}/deployments"}"
-[[ -d "${DEPLOYMENTS_DIR}/bosh/.genesis/manifests" ]] ||
-  fail "No deployment manifests found at ${DEPLOYMENTS_DIR}/bosh/.genesis/manifests!"
+DEPLOYMENTS_PATH="${DEPLOYMENTS_PATH:-"${HOME}/deployments"}"
+[[ -d "${DEPLOYMENTS_PATH}/bosh/.genesis/manifests" ]] ||
+  fail "No deployment manifests found at ${DEPLOYMENTS_PATH}/bosh/.genesis/manifests!"
 
 yamls=()
 opsfiles=()
