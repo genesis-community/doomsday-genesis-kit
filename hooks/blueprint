@@ -38,6 +38,12 @@ template::render::env::fqdns() {
     } 2>/dev/null | awk '/: /{print $2}';
   ))
 
+  if [[ ${#fqdns[@]} -eq 0 ]]
+  then
+    describe "No FQDNs found in Vault for environment '${OCFP_ENV_NAME}', skipping."
+    return 0
+  fi
+
   template::render ${template} ${outfile}
 
   for fqdn in "${fqdns[@]}" 
