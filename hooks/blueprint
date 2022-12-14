@@ -21,14 +21,16 @@ template::render() {
 
 template::render::bosh::credhub() {
   local template="ocfp/templates/credhub.yml"
-  local outfile="dynamic/${1}-bosh-credhub.yml"
+  local outfile="dynamic/${OCFP_ENV_NAME}-bosh-credhub.yml"
+
   template::render ${template} ${outfile}
+
   yamls+=( "${outfile}" )
 }
 
 template::render::env::fqdns() {
   local template="ocfp/templates/fqdns.yml"
-  local outfile="dynamic/${1}-bosh-fqdns.yml"
+  local outfile="dynamic/${OCFP_ENV_NAME}-bosh-fqdns.yml"
 
   fqdns=($({
     safe get ${OCFP_VAULT_PREFIX}/tf/${OCFP_ENV_PATH}/ocf/fqdns
@@ -47,7 +49,7 @@ template::render::env::fqdns() {
 
 template::render::env::vault() {
   local template="ocfp/templates/vault.yml"
-  local outfile="dynamic/${1}-vault.yml"
+  local outfile="dynamic/${OCFP_ENV_NAME}-vault.yml"
 
   template::render ${template} ${outfile}
 
@@ -59,7 +61,7 @@ ocfp::vault::prefix() {
   then
     OCFP_VAULT_PREFIX=$(
     cat ${DEPLOYMENTS_PATH}/bosh/.genesis/manifests/${OCFP_ENV_NAME}.yml |
-      spruce json | jq -r '.genesis.secrets_mount'
+      spruce json | jq -r '.genesis.secrets_mount' | sed -e 's#^/##' -e 's#/$##'
     )
   else
     OCFP_VAULT_PREFIX="secret"
