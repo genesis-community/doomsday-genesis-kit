@@ -10,13 +10,13 @@ instance_groups:
               name: {{OCFP_ENV_NAME}}-vault
               refresh_interval: 60
               properties:
-                address:   (( vault "{{OCFP_VAULT_PREFIX}}/exodus/{{OCFP_ENV_PATH}}/vault:url" ))
-                ca_certs:  (( vault "{{OCFP_VAULT_PREFIX}}/exodus/{{OCFP_ENV_PATH}}/vault:ca_crt" ))
-                base_path: (( vault "{{OCFP_VAULT_PREFIX}}/{{OCFP_ENV_PATH}}" ))
-                namespace: (( vault "{{OCFP_VAULT_PREFIX}}/exodus/{{OCFP_ENV_PATH}}/vault:namespace" ))
+                base_path: "{{OCFP_VAULT_PREFIX}}/{{OCFP_ENV_PATH}}"
+                address:   (( vault meta.vault "/vault:url" ))
+                ca_certs:  (( vault meta.vault "/vault:ca" ))
+                namespace: (( vault meta.vault "/vault:namespace" ))
                 insecure_skip_verify: true
                 trace: true
                 auth:
-                  role_id:   (( vault "{{OCFP_VAULT_PREFIX}}/exodus/{{OCFP_ENV_PATH}}/vault:role_id" ))
-                  secret_id: (( vault "{{OCFP_VAULT_PREFIX}}/exodus/{{OCFP_ENV_PATH}}/vault:secret_id" ))
+                  role_id:   (( vault meta.vault "/vault:role_id" ))
+                  secret_id: (( vault meta.vault "/vault:secret_id" ))
 

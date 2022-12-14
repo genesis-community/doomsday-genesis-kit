@@ -20,25 +20,23 @@ template::render() {
     -e "s#{{OCFP_ENV_PATH}}#${OCFP_ENV_PATH}#g" \
     -e "s#{{OCFP_VAULT_PREFIX}}#${OCFP_VAULT_PREFIX}#g" \
     < "${template}" > "${outfile}"
-  )
 }
 
-template::bosh::credhub() {
-  local outfile="dynamic/${OCFP_ENV_NAME}-bosh-credhub.yml"
+template::render::bosh::credhub() {
   local template="ocfp/templates/credhub.yml"
+  local outfile="dynamic/${1}-bosh-credhub.yml"
   (
   OCFP_ENV_NAME=${1}
   OCFP_ENV_PATH=${OCFP_ENV_NAME//-/\/}
 
   template::render ${OCFP_ENV_NAME} ${template} ${outfile}
   )
-
   yamls+=( "${outfile}" )
 }
 
-template::env::fqdns() {
-  local outfile="dynamic/${OCFP_ENV_NAME}-bosh-credhub.yml"
+template::render::env::fqdns() {
   local template="ocfp/templates/fqdns.yml"
+  local outfile="dynamic/${1}-bosh-credhub.yml"
   (
   OCFP_ENV_NAME=${1}
   OCFP_ENV_PATH=${OCFP_ENV_NAME//-/\/}
@@ -55,13 +53,12 @@ template::env::fqdns() {
     >> "${outfile}"
 
   )
-
   yamls+=( "${outfile}" )
 }
 
-template::env::vault() {
-  local outfile="dynamic/${OCFP_ENV_NAME}-vault.yml"
+template::render::env::vault() {
   local template="ocfp/templates/vault.yml"
+  local outfile="dynamic/${1}-vault.yml"
   (
   OCFP_ENV_NAME=${1}
 
@@ -79,7 +76,6 @@ template::env::vault() {
 
   template::render ${OCFP_ENV_NAME} ${template} ${outfile}
   )
-
   yamls+=( "${outfile}" )
 }
 
@@ -93,7 +89,7 @@ declare feature env_name mgmt_env
 declare -a yamls opsfiles bosh_envs
 declare -x OCFP_VAULT_PREFIX="${OCFP_VAULT_PREFIX:-"secret/"}"
 
-DEPLOYMENTS_DIR="${DEPLOYMENTS_DIR:-"deployments"}"
+DEPLOYMENTS_DIR="${DEPLOYMENTS_DIR:-"${HOME}/deployments"}"
 [[ -d "${DEPLOYMENTS_DIR}/bosh/.genesis/manifests" ]] ||
   fail "No deployment manifests found at ${DEPLOYMENTS_DIR}/bosh/.genesis/manifests!"
 
