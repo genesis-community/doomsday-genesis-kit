@@ -10,10 +10,7 @@ bosh::deps() {
 }
 
 template::render() {
-  local OCFP_ENV_NAME=${1}
-  local OCFP_ENV_PATH=${OCFP_ENV_NAME//-/\/}
-  local template=${2}
-  local outfile=${3}
+  local template=${1} outfile=${2}
 
   sed \
     -e "s#{{OCFP_ENV_NAME}}#${OCFP_ENV_NAME}#g" \
@@ -25,51 +22,39 @@ template::render() {
 template::render::bosh::credhub() {
   local template="ocfp/templates/credhub.yml"
   local outfile="dynamic/${1}-bosh-credhub.yml"
-  (
-  OCFP_ENV_NAME=${1}
-  OCFP_ENV_PATH=${OCFP_ENV_NAME//-/\/}
-
-  template::render ${OCFP_ENV_NAME} ${template} ${outfile}
-  )
+  template::render ${template} ${outfile}
   yamls+=( "${outfile}" )
 }
 
 template::render::env::fqdns() {
   local template="ocfp/templates/fqdns.yml"
   local outfile="dynamic/${1}-bosh-fqdns.yml"
-  (
-  OCFP_ENV_NAME=${1}
-  OCFP_ENV_PATH=${OCFP_ENV_NAME//-/\/}
 
-  declare -a fqdns
   fqdns=($({
     safe get ${OCFP_VAULT_PREFIX}/tf/${OCFP_ENV_PATH}/ocf/fqdns
     safe get ${OCFP_VAULT_PREFIX}/tf/${OCFP_ENV_PATH}/mgmt/fqdns
     } 2>/dev/null | awk '/: /{print $2}';
   ))
 
-  template::render ${OCFP_ENV_NAME} ${template} ${outfile}
-  for fqdn in "${fqdns[@]}" ; do echo "                  - ${fqdn}" ; done \
-    >> "${outfile}"
+  template::render ${template} ${outfile}
 
-  )
+  for fqdn in "${fqdns[@]}" 
+  do echo "                  - ${fqdn}" >> "${outfile}"
+  done
+
   yamls+=( "${outfile}" )
 }
 
 template::render::env::vault() {
   local template="ocfp/templates/vault.yml"
   local outfile="dynamic/${1}-vault.yml"
-  (
-  OCFP_ENV_NAME=${1}
 
-  template::render ${OCFP_ENV_NAME} ${template} ${outfile}
-  )
+  template::render ${template} ${outfile}
+
   yamls+=( "${outfile}" )
 }
 
 ocfp::vault::prefix() {
-  local OCFP_ENV_NAME=${1}
-
   if want_feature sharded-vault-paths
   then
     OCFP_VAULT_PREFIX=$(
@@ -77,7 +62,7 @@ ocfp::vault::prefix() {
       spruce json | jq -r '.genesis.secrets_mount'
     )
   else
-    OCFP_VAULT_PREFIX="secret/"
+    OCFP_VAULT_PREFIX="secret"
   fi
 }
 
@@ -88,7 +73,7 @@ shopt -s nullglob
 set -eu
 
 declare feature env_name mgmt_env
-declare -a yamls opsfiles ocf_envs
+declare -a yamls opsfiles ocf_envs fqdns
 declare -x OCFP_VAULT_PREFIX OCFP_ENV_NAME OCFP_ENV_PATH DEPLOYMENTS_PATH
 
 DEPLOYMENTS_PATH="${DEPLOYMENTS_PATH:-"${HOME}/deployments"}"
@@ -97,6 +82,7 @@ DEPLOYMENTS_PATH="${DEPLOYMENTS_PATH:-"${HOME}/deployments"}"
 
 yamls=()
 opsfiles=()
+fqdns=()
 
 mkdir dynamic
 
@@ -122,13 +108,15 @@ then
   mgmt_env=${GENESIS_ENVIRONMENT} 
   ocf_envs=($(bosh::deps | awk '/-bosh$/' | sed -e 's/-bosh$//'))
 
-  for env_name in ${mgmt_env} "${ocf_envs[@]}"
+  for OCFP_ENV_NAME in ${mgmt_env} "${ocf_envs[@]}"
   do
-    ocfp::vault::prefix ${env_name}
+    OCFP_ENV_PATH=${OCFP_ENV_NAME//-/\/}
 
-    template::render::env::fqdns ${env_name}
-    template::render::bosh::credhub ${env_name}
-    template::render::env::vault ${env_name}
+    ocfp::vault::prefix
+
+    template::render::env::fqdns
+    template::render::bosh::credhub
+    template::render::env::vault
   done
 fi
 
