@@ -62,6 +62,14 @@ template::render::env::vault() {
   (
   OCFP_ENV_NAME=${1}
 
+  template::render ${OCFP_ENV_NAME} ${template} ${outfile}
+  )
+  yamls+=( "${outfile}" )
+}
+
+ocfp::vault::prefix() {
+  local OCFP_ENV_NAME=${1}
+
   if want_feature sharded-vault-paths
   then
     if [[ ${OCFP_ENV_NAME} != ${GENESIS_ENVIRONMENT} ]]
@@ -72,11 +80,9 @@ template::render::env::vault() {
       )
       OCFP_VAULT_PREFIX=${vault_prefix}
     fi
+  else
+    OCFP_VAULT_PREFIX="secret/"
   fi
-
-  template::render ${OCFP_ENV_NAME} ${template} ${outfile}
-  )
-  yamls+=( "${outfile}" )
 }
 
 ################################################################################
@@ -86,8 +92,8 @@ shopt -s nullglob
 set -eu
 
 declare feature env_name mgmt_env
-declare -a yamls opsfiles bosh_envs
-declare -x OCFP_VAULT_PREFIX="${OCFP_VAULT_PREFIX:-"secret/"}"
+declare -a yamls opsfiles ocf_envs
+declare -x OCFP_VAULT_PREFIX OCFP_ENV_NAME OCFP_ENV_PATH
 
 DEPLOYMENTS_DIR="${DEPLOYMENTS_DIR:-"${HOME}/deployments"}"
 [[ -d "${DEPLOYMENTS_DIR}/bosh/.genesis/manifests" ]] ||
@@ -103,7 +109,7 @@ yamls+=( "manifests/doomsday.yml" )
 for feature in ${GENESIS_REQUESTED_FEATURES[@]}
 do
   case "${feature}" in
-    (ocfp) true ;;
+    (ocfp|sharded-vault-paths) true ;;
     (*)
       if [[ -s "$GENESIS_ROOT/ops/${feature}.yml" ]]
       then opsfiles+=( "$GENESIS_ROOT/ops/${feature}.yml" )
@@ -118,10 +124,12 @@ then
   yamls+=( "ocfp/ocfp.yml" )
 
   mgmt_env=${GENESIS_ENVIRONMENT} 
-  bosh_envs=($(bosh::deps | grep -E '-bosh$' | sed -e 's/-bosh$//'))
+  ocf_envs=($(bosh::deps | awk '/-bosh$/' | sed -e 's/-bosh$//'))
 
-  for env_name in ${mgmt_env} "${bosh_envs[@]}"
+  for env_name in ${mgmt_env} "${ocf_envs[@]}"
   do
+    ocfp::vault::prefix ${env_name}
+
     template::render::bosh::credhub ${env_name}
     template::render::env::fqdns ${env_name}
     template::render::env::vault ${env_name}
