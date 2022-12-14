@@ -36,7 +36,7 @@ template::render::bosh::credhub() {
 
 template::render::env::fqdns() {
   local template="ocfp/templates/fqdns.yml"
-  local outfile="dynamic/${1}-bosh-credhub.yml"
+  local outfile="dynamic/${1}-bosh-fqdns.yml"
   (
   OCFP_ENV_NAME=${1}
   OCFP_ENV_PATH=${OCFP_ENV_NAME//-/\/}
@@ -75,7 +75,7 @@ ocfp::vault::prefix() {
     if [[ ${OCFP_ENV_NAME} != ${GENESIS_ENVIRONMENT} ]]
     then # NOTE: Lookup base vault path for each environment
       vault_prefix=$(
-      cat ${DEPLOYMENT_DIR}/bosh/.genesis/manifests/${OCFP_ENV_NAME}.yml |
+      cat ${DEPLOYOMENTS_DIR}/bosh/.genesis/manifests/${OCFP_ENV_NAME}.yml |
         spruce json | jq -r '.genesis.secrets_mount'
       )
       OCFP_VAULT_PREFIX=${vault_prefix}
@@ -93,7 +93,7 @@ set -eu
 
 declare feature env_name mgmt_env
 declare -a yamls opsfiles ocf_envs
-declare -x OCFP_VAULT_PREFIX OCFP_ENV_NAME OCFP_ENV_PATH
+declare -x OCFP_VAULT_PREFIX OCFP_ENV_NAME OCFP_ENV_PATH DEPLOYOMENTS_DIR
 
 DEPLOYMENTS_DIR="${DEPLOYMENTS_DIR:-"${HOME}/deployments"}"
 [[ -d "${DEPLOYMENTS_DIR}/bosh/.genesis/manifests" ]] ||
@@ -130,8 +130,8 @@ then
   do
     ocfp::vault::prefix ${env_name}
 
-    template::render::bosh::credhub ${env_name}
     template::render::env::fqdns ${env_name}
+    template::render::bosh::credhub ${env_name}
     template::render::env::vault ${env_name}
   done
 fi
