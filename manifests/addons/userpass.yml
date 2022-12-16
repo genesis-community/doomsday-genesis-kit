@@ -9,6 +9,9 @@ exodus:
   admin_username: (( grab meta.admin_username ))
   admin_password: (( grab meta.admin_password ))
 
+params:
+  admin_username: admin
+
 instance_groups:
   - name: doomsday
     jobs:
