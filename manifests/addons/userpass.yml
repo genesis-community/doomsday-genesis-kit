@@ -1,6 +1,6 @@
 ---
 meta:
-  admin_username:      (( vault meta.vault "/user:username" ))
+  admin_username:      admin
   admin_password:      (( vault meta.vault "/user:password" ))
   server_auth_timeout: (( grab params.server_auth_timeout || 30 ))
   server_auth_refresh: (( grab params.server_auth_refresh || true ))
@@ -8,9 +8,6 @@ meta:
 exodus:
   admin_username: (( grab meta.admin_username ))
   admin_password: (( grab meta.admin_password ))
-
-params:
-  admin_username: admin
 
 instance_groups:
   - name: doomsday
