@@ -6,8 +6,8 @@ meta:
   server_auth_refresh: (( grab params.server_auth_refresh || true ))
 
 exodus:
-  admin_username: (( grab meta.server_admin_username ))
-  admin_password: (( grab meta.server_admin_password ))
+  admin_username: (( grab meta.admin_username ))
+  admin_password: (( grab meta.admin_password ))
 
 instance_groups:
   - name: doomsday
