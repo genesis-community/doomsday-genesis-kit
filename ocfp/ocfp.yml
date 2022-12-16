@@ -1,5 +1,8 @@
 ---
 meta:
+  doomsday:
+    network: genesis.env "-doomsday" # Used by dns for tls cert
+
   ocfp:
     env:
       scale: (( grab params.ocfp_env_scale || "dev" ))
@@ -24,7 +27,7 @@ meta:
       version: (( grab params.stemcell_version || "latest" ))
 
 params:
-  cert_dns_name: (( concat "doomsday." genesis.env "-doomsday.bosh" ))
+  cert_dns_name: (( concat "doomsday." meta.doomsday.network ".bosh" ))
 
 instance_groups:
   - name: doomsday

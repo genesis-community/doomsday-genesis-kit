@@ -1,7 +1,7 @@
 ---
 meta:
   doomsday:
-    network: (( grab params.network || "default" ))
+    network: (( grab params.network || "default" )) # Used by dns for tls cert
     azs:
       - z1
 
