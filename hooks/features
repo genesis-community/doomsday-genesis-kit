@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+if want_feature ocfp
+then
+  echo userpass
+  echo tls
+  echo lb
+fi
+

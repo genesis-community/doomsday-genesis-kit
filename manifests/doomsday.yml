@@ -4,6 +4,10 @@ meta:
     azs:
       - z1
 
+params:
+  ca_validity_period:   10y
+  cert_validity_period: 10y
+
 instance_groups:
   - name: doomsday
     instances: 1
