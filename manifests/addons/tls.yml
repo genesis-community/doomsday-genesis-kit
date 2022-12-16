@@ -1,0 +1,20 @@
+---
+meta:
+  server_crt: (( vault meta.vault "ssl/server:crt" ))
+  server_key: (( vault meta.vault "ssl/server:key" ))
+
+exodus:
+  server_crt: (( grab meta.server_cert ))
+  server_key: (( grab meta.server_key ))
+
+instance_groups:
+  - name: doomsday
+    jobs:
+      - name: doomsday
+        properties:
+          server:
+            port: 443
+            tls:
+              cert: (( grab meta.server_cert ))
+              key:  (( grab meta.server_key ))  
+

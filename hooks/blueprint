@@ -96,7 +96,12 @@ yamls+=( "manifests/doomsday.yml" )
 for feature in ${GENESIS_REQUESTED_FEATURES[@]}
 do
   case "${feature}" in
-    (ocfp|sharded-vault-paths|lb) true ;;
+    (ocfp|sharded-vault-paths)
+			true
+			;;
+    (tls|lb|userpass)
+			yamls+=( "manifests/addons/${feature}.yml" )
+			;;
     (*)
       if [[ -s "$GENESIS_ROOT/ops/${feature}.yml" ]]
       then opsfiles+=( "$GENESIS_ROOT/ops/${feature}.yml" )
@@ -124,9 +129,6 @@ then
     template::render::env::vault
   done
 
-  if want_feature lb
-  then yamls+=( "ocfp/lb.yml" )
-  fi
 fi
 
 for opsfile in "${opsfiles[@]}"
