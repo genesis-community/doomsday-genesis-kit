@@ -1,0 +1,37 @@
+---
+meta:
+  ocfp:
+    env:
+      scale: (( grab params.ocfp_env_scale || "dev" ))
+
+    vault:
+      tf_path: (( concat genesis.secrets_mount "tf/" genesis.vault_env ))
+
+  doomsday:
+    azs:
+      - (( concat genesis.env "-z2" ))
+
+    disk_type: (( concat "default-" meta.ocfp.env.scale ))
+
+    vm_type:   (( concat "default-" meta.ocfp.env.scale ))
+
+    networks:
+      - name: (( concat genesis.env "-doomsday" ))
+
+    stemcell:
+      name:    (( grab params.stemcell_name    || "default" ))
+      os:      (( grab params.stemcell_os      || "ubuntu-bionic" ))
+      version: (( grab params.stemcell_version || "latest" ))
+
+---
+instance_groups:
+  - name: doomsday
+
+    networks: (( grab meta.doomsday.networks ))
+
+    azs: (( grab meta.doomsday.azs ))
+
+    vm_type: (( grab meta.doomsday.vm_type ))
+
+    stemcell: (( grab meta.doomsday.stemcell.name ))
+

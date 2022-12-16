@@ -1,53 +1,136 @@
 #!/bin/bash
+
+################################################################################
+# Functions
+################################################################################
+fail() { echo "$@" >&2 ; exit 1 ; }
+
+bosh::deps() {
+  bosh deps --json | jq -r '.Tables[0].Rows[].name'
+}
+
+template::render() {
+  local template=${1} outfile=${2}
+
+  sed \
+    -e "s#{{OCFP_ENV_NAME}}#${OCFP_ENV_NAME}#g" \
+    -e "s#{{OCFP_ENV_PATH}}#${OCFP_ENV_PATH}#g" \
+    -e "s#{{OCFP_VAULT_PREFIX}}#${OCFP_VAULT_PREFIX}#g" \
+    < "${template}" > "${outfile}"
+}
+
+template::render::bosh::credhub() {
+  local template="ocfp/templates/credhub.yml"
+  local outfile="dynamic/${OCFP_ENV_NAME}-bosh-credhub.yml"
+
+  template::render ${template} ${outfile}
+
+  yamls+=( "${outfile}" )
+}
+
+template::render::env::fqdns() {
+  local template="ocfp/templates/fqdns.yml"
+  local outfile="dynamic/${OCFP_ENV_NAME}-bosh-fqdns.yml"
+
+  fqdns=($({
+    safe get ${OCFP_VAULT_PREFIX}/tf/${OCFP_ENV_PATH}/ocf/fqdns
+    safe get ${OCFP_VAULT_PREFIX}/tf/${OCFP_ENV_PATH}/mgmt/fqdns
+    } 2>/dev/null | awk '/: /{print $2}';
+  ))
+
+  [[ ${#fqdns[@]} -gt 0 ]] ||
+    return 0 # No FQDNs found in Vault for environment, skipping.
+
+  template::render ${template} ${outfile}
+
+  for fqdn in "${fqdns[@]}" 
+  do echo "                  - ${fqdn}" >> "${outfile}"
+  done
+
+  yamls+=( "${outfile}" )
+}
+
+template::render::env::vault() {
+  local template="ocfp/templates/vault.yml"
+  local outfile="dynamic/${OCFP_ENV_NAME}-vault.yml"
+
+  template::render ${template} ${outfile}
+
+  yamls+=( "${outfile}" )
+}
+
+ocfp::vault::prefix() {
+  if want_feature sharded-vault-paths
+  then
+    OCFP_VAULT_PREFIX=$(
+    cat ${DEPLOYMENTS_PATH}/bosh/.genesis/manifests/${OCFP_ENV_NAME}.yml |
+      spruce json | jq -r '.genesis.secrets_mount' | sed -e 's#^/##' -e 's#/$##'
+    )
+  else
+    OCFP_VAULT_PREFIX="secret"
+  fi
+}
+
+################################################################################
+# Main
+################################################################################
 shopt -s nullglob
 set -eu
 
-# Genesis Kit 'blueprint' Hook
-#
-# This script outputs the list of merge files needed to support the desired
-# feature set selected by the environment parameter file.  As generated, it
-# lists all *.yml files in the base, then all *.yml files in each detected
-# feature directory, in the order the features are specified in the environment
-# yml file.  If finer control is desired, add logic around the wants_kit_feature()
-# function (takes a feature as a string, returns exit code 0 if present, non-
-# zero exit code otherwise).
+declare feature env_name mgmt_env
+declare -a yamls opsfiles ocf_envs fqdns
+declare -x OCFP_VAULT_PREFIX OCFP_ENV_NAME OCFP_ENV_PATH DEPLOYMENTS_PATH
 
-declare -a manifests
+DEPLOYMENTS_PATH="${DEPLOYMENTS_PATH:-"${HOME}/deployments"}"
+[[ -d "${DEPLOYMENTS_PATH}/bosh/.genesis/manifests" ]] ||
+  fail "No deployment manifests found at ${DEPLOYMENTS_PATH}/bosh/.genesis/manifests!"
 
-# Normally, your first manifest block is named after the kit, but it is also
-# common to be named "manifest/base.yml"
-manifests+=( manifests/doomsday.yml )
+yamls=()
+opsfiles=()
+fqdns=()
 
-### Option 1: validate and process your list of features
-#
-# validate_features your-list of-features 
-#                   go-here
-#
-# # Once your features are validated, assemble them in order
-# if want_feature "feature_name" ; then
-#   manifest+=( 
-#     manifests/feature_name.yml 
-#     releases/feature_name.yml 
-#   )
-# fi
+mkdir dynamic
 
-### Option 2: Allow repo-provided files as features
-#             This allows users to specify the order in which manifest blocks
-#             are assembled, so if specific blocks must come first, pre-process
-#             them above
-#
-# for __feature in ${GENESIS_REQUESTED_FEATURES; do
-#   if [[ -f "$GENESIS_ROOT/ops/$__feature.yml" ]] ; then
-#     manifests+=( "$GENESIS_ROOT/ops/$__feature.yml" )
-#   else
-#     # Process remaining features another way...
-#   fi
-# done
+yamls+=( "manifests/doomsday.yml" )
 
-# Option 3: Bulk assemblage - assemble all files in order of natural sort
-for dir in features/*; do
-	if want_feature "$(basename "$dir")"; then
-		manifests+=( "$dir/*.yml" )
-	fi
+for feature in ${GENESIS_REQUESTED_FEATURES[@]}
+do
+  case "${feature}" in
+    (ocfp|sharded-vault-paths|lb) true ;;
+    (*)
+      if [[ -s "$GENESIS_ROOT/ops/${feature}.yml" ]]
+      then opsfiles+=( "$GENESIS_ROOT/ops/${feature}.yml" )
+      else fail "Feature not found: '${feature}'"
+      fi
+      ;;
+  esac
 done
-echo ${manifests[@]}
+
+if want_feature ocfp
+then
+  yamls+=( "ocfp/ocfp.yml" )
+
+  mgmt_env=${GENESIS_ENVIRONMENT} 
+  ocf_envs=($(bosh::deps | awk '/-bosh$/' | sed -e 's/-bosh$//'))
+
+  for OCFP_ENV_NAME in ${mgmt_env} "${ocf_envs[@]}"
+  do
+    OCFP_ENV_PATH=${OCFP_ENV_NAME//-/\/}
+
+    ocfp::vault::prefix
+
+    template::render::env::fqdns
+    template::render::bosh::credhub
+    template::render::env::vault
+  done
+
+  if want_feature lb
+  then yamls+=( "ocfp/lb.yml" )
+  fi
+fi
+
+for opsfile in "${opsfiles[@]}"
+do yamls+=( "$opsfile" )
+done
+
+echo ${yamls[@]}

@@ -1,0 +1,13 @@
+---
+instance_groups:
+  - name: doomsday
+    jobs:
+      - name: doomsday
+        properties:
+          backends:
+            - (( append ))
+            - type: tlsclient
+              name: {{OCFP_ENV_NAME}}-fqdns
+              properties:
+                timeout: 20
+                hosts:

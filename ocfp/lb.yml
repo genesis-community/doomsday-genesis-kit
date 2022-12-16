@@ -1,0 +1,6 @@
+---
+instance_groups:
+- name: doomsday
+  vm_extensions:
+  - ((replace))
+  - (( grab params.lb_vm_ext_name || "doomsday-lb" ))

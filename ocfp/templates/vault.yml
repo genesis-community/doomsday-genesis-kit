@@ -1,0 +1,22 @@
+---
+instance_groups:
+  - name: doomsday
+    jobs:
+      - name: doomsday
+        properties:
+          backends:
+            - (( append ))
+            - type: vault
+              name: {{OCFP_ENV_NAME}}-vault
+              refresh_interval: 60
+              properties:
+                base_path: "{{OCFP_VAULT_PREFIX}}/{{OCFP_ENV_PATH}}"
+                address:   (( vault meta.vault "/vault:url" ))
+                ca_certs:  (( vault meta.vault "/vault:ca" ))
+                namespace: (( vault meta.vault "/vault:namespace" ))
+                insecure_skip_verify: true
+                trace: true
+                auth:
+                  role_id:   (( vault meta.vault "/vault:role_id" ))
+                  secret_id: (( vault meta.vault "/vault:secret_id" ))
+
