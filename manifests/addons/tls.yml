@@ -1,7 +1,7 @@
 ---
 meta:
-  server_crt: (( vault meta.vault "ssl/server:certificate" ))
-  server_key: (( vault meta.vault "ssl/server:key" ))
+  server_crt: (( vault meta.vault "/ssl/server:certificate" ))
+  server_key: (( vault meta.vault "/ssl/server:key" ))
 
 exodus:
   server_crt: (( grab meta.server_cert ))
