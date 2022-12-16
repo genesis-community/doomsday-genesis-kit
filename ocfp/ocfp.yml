@@ -23,7 +23,9 @@ meta:
       os:      (( grab params.stemcell_os      || "ubuntu-bionic" ))
       version: (( grab params.stemcell_version || "latest" ))
 
----
+params:
+  cert_dns_name: (( concat "doomsday." genesis.env "-doomsday.bosh" ))
+
 instance_groups:
   - name: doomsday
 

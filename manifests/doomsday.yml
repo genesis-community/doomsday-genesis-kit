@@ -1,12 +1,14 @@
 ---
 meta:
   doomsday:
+    network: (( grab params.network || "default" ))
     azs:
       - z1
 
 params:
   ca_validity_period:   10y
   cert_validity_period: 10y
+  cert_dns_name: (( concat "doomsday." meta.doomsday.network ".bosh" ))
 
 instance_groups:
   - name: doomsday

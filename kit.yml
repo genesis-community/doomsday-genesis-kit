@@ -14,4 +14,6 @@ certificates:
         valid_for: ${params.ca_validity_period}
       server:
         valid_for: ${params.cert_validity_period}
+        names:
+          - ${params.cert_dns_name}
 
