@@ -1,9 +1,25 @@
 #!/usr/bin/env bash
 
-if want_feature ocfp
-then
-  echo userpass
-  echo tls
-  echo lb
-fi
+declare feature
+declare -a features ; features=()
 
+for feature in ${GENESIS_REQUESTED_FEATURES}
+do
+  case ${feature} in
+    (ocfp) # OCFP Reference Architecture default features
+      features+=( ${feature} )
+      for f in userpass tls lb
+      do want_feature ${f} || features+=( ${f} )
+      done
+      ;;
+    (*)
+      features+=( ${feature} )
+      ;;
+  esac
+done
+
+for feature in "${features[@]}"
+do echo ${feature}
+done
+
+echo 0
