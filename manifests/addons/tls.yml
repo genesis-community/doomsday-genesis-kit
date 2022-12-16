@@ -4,7 +4,7 @@ meta:
   server_key: (( vault meta.vault "/ssl/server:key" ))
 
 exodus:
-  server_crt: (( grab meta.server_cert ))
+  server_crt: (( grab meta.server_crt ))
   server_key: (( grab meta.server_key ))
 
 instance_groups:
@@ -15,6 +15,6 @@ instance_groups:
           server:
             port: 443
             tls:
-              cert: (( grab meta.server_cert ))
+              cert: (( grab meta.server_crt ))
               key:  (( grab meta.server_key ))  
 
