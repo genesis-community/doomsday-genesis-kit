@@ -1,7 +1,7 @@
 ---
 meta:
   admin_username:      admin
-  admin_password:      (( vault meta.vault "/user:password" ))
+  admin_password:      (( vault meta.vault "/users/admin:password" ))
   server_auth_timeout: (( grab params.server_auth_timeout || 30 ))
   server_auth_refresh: (( grab params.server_auth_refresh || true ))
 
