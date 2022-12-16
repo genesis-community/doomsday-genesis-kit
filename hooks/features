@@ -22,4 +22,4 @@ for feature in "${features[@]}"
 do echo ${feature}
 done
 
-echo 0
+exit 0
