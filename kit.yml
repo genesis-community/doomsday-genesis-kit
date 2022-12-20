@@ -5,7 +5,7 @@ author:  Norman Abramovitz <norm@starkandwayne.com>
 docs:    https://github.com/cloudfoundry-community/doomsday-boshrelease
 code:    https://github.com/genesis-community/doomsday-genesis-kit
 
-genesis_version_min: 2.8.6 # TODO: 2.8.7 once released for ocfp
+genesis_version_min: 2.8.7
 
 credentials:
   userpass:
