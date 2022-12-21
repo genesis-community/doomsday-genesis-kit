@@ -75,7 +75,7 @@ set -eu
 
 declare feature env_name mgmt_env
 declare -a yamls opsfiles ocf_envs fqdns
-declare -x OCFP_VAULT_PREFIX OCFP_ENV_NAME OCFP_ENV_PATH OCFP_ENV_VAULT_PREFIX
+declare -x OCFP_ENV_NAME OCFP_ENV_PATH OCFP_ENV_VAULT_PREFIX
 
 yamls=()
 opsfiles=()
