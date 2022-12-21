@@ -15,7 +15,7 @@ template::render() {
   sed \
     -e "s#{{OCFP_ENV_NAME}}#${OCFP_ENV_NAME}#g" \
     -e "s#{{OCFP_ENV_PATH}}#${OCFP_ENV_PATH}#g" \
-    -e "s#{{OCFP_VAULT_PREFIX}}#${OCFP_VAULT_PREFIX}#g" \
+    -e "s#{{OCFP_VAULT_PREFIX}}#${OCFP_ENV_VAULT_PREFIX}#g" \
     < "${template}" > "${outfile}"
 }
 
@@ -33,13 +33,12 @@ template::render::env::fqdns() {
   local outfile="dynamic/${OCFP_ENV_NAME}-bosh-fqdns.yml"
 
   fqdns=($({
-    safe get ${OCFP_VAULT_PREFIX}/tf/${OCFP_ENV_PATH}/ocf/fqdns
-    safe get ${OCFP_VAULT_PREFIX}/tf/${OCFP_ENV_PATH}/mgmt/fqdns
+    safe get ${OCFP_ENV_VAULT_PREFIX}/tf/${OCFP_ENV_PATH}/ocf/fqdns
+    safe get ${OCFP_ENV_VAULT_PREFIX}/tf/${OCFP_ENV_PATH}/mgmt/fqdns
     } 2>/dev/null | awk '/: /{print $2}';
   ))
 
-  [[ ${#fqdns[@]} -gt 0 ]] ||
-    return 0 # No FQDNs found in Vault for environment, skipping.
+  [[ ${#fqdns[@]} -gt 0 ]] || return 0 # No FQDNs found for env, skipping.
 
   template::render ${template} ${outfile}
 
@@ -60,21 +59,12 @@ template::render::env::vault() {
 }
 
 ocfp::vault::prefix() {
-  [[ -z "${OCFP_VAULT_PREFIX:-}" ]] || return 0
-
   if want_feature sharded-vault-paths
-  then # Madness. Not a best practice. Don't do this.
-    DEPLOYMENTS_PATH="${DEPLOYMENTS_PATH:-"${HOME}/deployments"}"
-
-    [[ -d "${DEPLOYMENTS_PATH}/bosh/.genesis/manifests" ]] ||
-      fail "No deployment manifests found at ${DEPLOYMENTS_PATH}/bosh/.genesis/manifests!"
-
-    OCFP_VAULT_PREFIX=$(
-    cat ${DEPLOYMENTS_PATH}/bosh/.genesis/manifests/${OCFP_ENV_NAME}.yml |
-      spruce json | jq -r '.genesis.secrets_mount' | sed -e 's#^/##' -e 's#/$##'
-    )
+  then # Madness. Not a best practice. Don't use this feature :p
+    [[ -n ${OCFP_VAULT_PREFIX:-} ]] || fail "OCFP_VAULT_PREFIX env var not set!"
+    OCFP_ENV_VAULT_PREFIX="$(safe get ${OCFP_VAULT_PREFIX}/${OCFP_ENV_PATH}/doomsday/vault/prefixes)"
   else
-    OCFP_VAULT_PREFIX="secret"
+    OCFP_ENV_VAULT_PREFIX="secret"
   fi
 }
 
@@ -86,7 +76,7 @@ set -eu
 
 declare feature env_name mgmt_env
 declare -a yamls opsfiles ocf_envs fqdns
-declare -x OCFP_VAULT_PREFIX OCFP_ENV_NAME OCFP_ENV_PATH DEPLOYMENTS_PATH OCFP_VAULT_PREFIX
+declare -x OCFP_VAULT_PREFIX OCFP_ENV_NAME OCFP_ENV_PATH DEPLOYMENTS_PATH OCFP_ENV_VAULT_PREFIX
 
 yamls=()
 opsfiles=()
