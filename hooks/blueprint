@@ -61,7 +61,6 @@ template::render::env::vault() {
 ocfp::vault::prefix() {
   if want_feature sharded-vault-paths
   then # Madness. Not a best practice. Don't use this feature :p
-    [[ -n ${OCFP_VAULT_PREFIX:-} ]] || fail "OCFP_VAULT_PREFIX env var not set!"
     OCFP_ENV_VAULT_PREFIX="$(safe get ${GENESIS_SECRETS_MOUNT}/${GENESIS_ENVIRONMENT//-/\/}/doomsday/vault/prefixes:${OCFP_ENV_NAME})"
   else
     OCFP_ENV_VAULT_PREFIX="secret"
