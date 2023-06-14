@@ -1,0 +1,14 @@
+---
+kit:
+  features:
+    - lb
+    - tls
+    - userpass
+
+genesis:
+  env:      base-all-params
+  bosh_env: some-other-env
+
+params: {}
+
+

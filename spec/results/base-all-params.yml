@@ -1,0 +1,48 @@
+exodus:
+  admin_password: <!{meta.vault}/users/admin:password!>
+  admin_username: admin
+  bosh: some-other-env
+  is_director: false
+  server_crt: <!{meta.vault}/ssl/server:certificate!>
+  server_key: <!{meta.vault}/ssl/server:key!>
+  use_create_env: false
+instance_groups:
+- azs:
+  - z1
+  instances: 1
+  jobs:
+  - name: doomsday
+    properties:
+      debug: false
+      server:
+        auth:
+          properties:
+            password: <!{meta.vault}/users/admin:password!>
+            refresh: true
+            timeout: 30
+            username: admin
+          type: userpass
+        port: 443
+        tls:
+          cert: <!{meta.vault}/ssl/server:certificate!>
+          key: <!{meta.vault}/ssl/server:key!>
+    release: doomsday
+  name: doomsday
+  networks:
+  - name: default
+  stemcell: default
+  vm_extensions:
+  - doomsday-lb
+  vm_type: default
+name: base-all-params-doomsday
+stemcells:
+- alias: default
+  os: ubuntu-jammy
+  version: latest
+update:
+  canaries: 1
+  canary_watch_time: 5000-600000
+  max_errors: 1
+  max_in_flight: 1
+  serial: false
+  update_watch_time: 5000-600000

@@ -1,0 +1,10 @@
+---
+kit:
+  features: []
+
+genesis:
+  env:   base
+
+params:
+  vm_type: small
+  network: test-network

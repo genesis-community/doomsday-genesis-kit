@@ -1,0 +1,30 @@
+exodus:
+  bosh: base
+  is_director: false
+  use_create_env: false
+instance_groups:
+- azs:
+  - z1
+  instances: 1
+  jobs:
+  - name: doomsday
+    properties:
+      debug: false
+    release: doomsday
+  name: doomsday
+  networks:
+  - name: test-network
+  stemcell: default
+  vm_type: small
+name: base-doomsday
+stemcells:
+- alias: default
+  os: ubuntu-jammy
+  version: latest
+update:
+  canaries: 1
+  canary_watch_time: 5000-600000
+  max_errors: 1
+  max_in_flight: 1
+  serial: false
+  update_watch_time: 5000-600000
