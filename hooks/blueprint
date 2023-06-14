@@ -123,8 +123,8 @@ then
 
 fi
 
-for opsfile in "${opsfiles[@]}"
-do yamls+=( "$opsfile" )
+for opsfile in ${opsfiles[@]+"${opsfiles[@]}"} ; do
+  yamls+=( "$opsfile" )
 done
 
 echo ${yamls[@]}

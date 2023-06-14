@@ -9,14 +9,12 @@ then
     _disk_type="default-${_env_scale}"
     _network="${GENESIS_ENVIRONMENT}-doomsday"
   else # Legacy was hard coded
-    _vm_type="small"
-    _network="shield"
-    _disk_type="shield"
+    _vm_type="$(lookup params.vm_type "default" )"
+    _network="$(lookup params.network "default" )"
   fi
   
   cloud_config_needs vm_type   "$(lookup params.vm_type   ${_vm_type})"
   cloud_config_needs network   "$(lookup params.network   ${_network})"
-  cloud_config_needs disk_type "$(lookup params.disk_pool ${_disk_type})"
   
   if check_cloud_config
   then describe "  cloud config [#G{OK}]"
