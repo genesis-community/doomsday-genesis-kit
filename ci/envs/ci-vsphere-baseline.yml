@@ -1,0 +1,15 @@
+---
+kit:
+  features:
+    - ((append))
+    - full
+    - self-signed-cert
+
+genesis:
+  env:   ci-vsphere-baseline
+
+params:
+  network: doomsday
+  vm_type: small
+
+  availability_zones: [z1]
