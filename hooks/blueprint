@@ -83,7 +83,7 @@ fqdns=()
 
 mkdir dynamic
 
-yamls+=( "manifests/doomsday.yml" )
+yamls+=( "manifests/doomsday.yml manifests/releases/doomsday.yml" )
 
 for feature in ${GENESIS_REQUESTED_FEATURES[@]}
 do
