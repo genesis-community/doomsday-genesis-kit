@@ -64,6 +64,7 @@ resources:
     type: $type
     check_every: 24h
     source:
+      access_token: ((github.access_token))
       repository: $repo$owner
 EOF
 
