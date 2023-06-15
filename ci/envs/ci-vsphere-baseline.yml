@@ -1,9 +1,6 @@
 ---
 kit:
-  features:
-    - ((append))
-    - full
-    - self-signed-cert
+  features: []
 
 genesis:
   env:   ci-vsphere-baseline
