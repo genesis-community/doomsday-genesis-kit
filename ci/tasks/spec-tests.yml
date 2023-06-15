@@ -14,4 +14,4 @@ inputs:
 run:
   dir: git/spec
   path: ginkgo
-  args: [ "-debug", "." ]
+  args: [ "-p", "." ]
