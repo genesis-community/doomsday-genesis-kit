@@ -2,6 +2,7 @@ exodus:
   admin_password: <!{meta.vault}/users/admin:password!>
   admin_username: admin
   bosh: some-other-env
+  features: lb,tls,userpass
   is_director: false
   server_crt: <!{meta.vault}/ssl/server:certificate!>
   server_key: <!{meta.vault}/ssl/server:key!>
