@@ -157,7 +157,7 @@ fi
 
 if [[ "$SKIP_DEPLOY" == "false" ]]; then
 	header "Deploying ${DEPLOY_ENV} environment to verify functionality..."
-	genesis "do" "${DEPLOY_ENV}" -- list
+	#genesis "do" "${DEPLOY_ENV}" -- list # No addons
 	genesis add-secrets "${DEPLOY_ENV}"
 
 	# get and upload stemcell version if needed (handled by bosh cli if version and name are supplied)
