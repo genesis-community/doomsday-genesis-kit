@@ -5,7 +5,21 @@ using the [Doomsday BOSH Release](https://github.com/doomsday-project/doomsday-b
 
 # General Usage Guidelines
 
-TBD
+This Doomsday kit assumes that it is being deployed in a Management environment ("Mgmt")
+
+It will look up the deployments of the BOSH director which deploys it to gather a list
+of BOSH directors and automatically configure to target each of them to scan certificates
+within their credhub.
+
+If the `ocfp` reference architecutre feature flag is being used it will also look up the 
+terraform environment path `mgmt/fqdns` and `ocf/fqdns` and configure to scan their 
+ceritifcates for each `fqdns` entry.
+
+It will also look up and scan the vault path certificates, by default using `secret/`.
+If the `shareded-vault-paths` feature is being used (not recommended), it will 
+read the configured path prefixes to scan from the vault environment path at `/doomsday`.
+These prefixes are used when the configuration template is rendered telling the specific
+doomsday vault configuration entry what vault path to look in for certificates.
 
 # Base Parameters
 
