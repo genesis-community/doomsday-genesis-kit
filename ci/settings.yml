@@ -46,3 +46,4 @@ meta:
       type:       github-release
       repository: RubidiumStudios/doomsday-boshrelease
       path:       manifests/releases/doomsday.yml
+      access_token: ((github.access_token))
