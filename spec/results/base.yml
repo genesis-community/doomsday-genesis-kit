@@ -20,9 +20,9 @@ instance_groups:
 name: base-doomsday
 releases:
 - name: doomsday
-  sha1: 9297f956f6abeb041096b8b1a2928205426c0e18
-  url: https://github.com/RubidiumStudios/doomsday-boshrelease/releases/download/v0.9.5/doomsday-0.9.5.tgz
-  version: 0.9.5
+  sha1: af09580cf84c862d71e56330798c469c4bba631d
+  url: https://github.com/RubidiumStudios/doomsday-boshrelease/releases/download/v0.9.6/doomsday-0.9.6.tgz
+  version: 0.9.6
 stemcells:
 - alias: default
   os: ubuntu-jammy
