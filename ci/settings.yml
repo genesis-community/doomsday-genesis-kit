@@ -8,24 +8,28 @@ meta:
   exposed:         false
   version_file:    version
   initial_version: 0.0.4
+  
+  upstream:
+    bosh_releases:
+    - name:       doomsday
+      type:       github-release
+      repository: RubidiumStudios/doomsday-boshrelease
+      path:       manifests/releases/doomsday.yml
+      access_token: ((github.access_token))
+
   bosh:
     uri:      ((bosh.uri))
     username: ((bosh.username))
     password: ((bosh.password))
     cacert:   ((bosh.ca))
 
-  credhub:
-    url:      ((bosh.credhub_url))
-    username: ((bosh.credhub_username))
-    password: ((bosh.credhub_password))
-
   vault:
     url:       ((vault.url))
     token:     ((vault.token))
 
   aws:
-    access_key:  ((cloudfoundry-community-aws.access_key_id))
-    secret_key:  ((cloudfoundry-community-aws.secret_access_key))
+    access_key: ((cloudfoundry-community-aws.access_key_id))
+    secret_key: ((cloudfoundry-community-aws.secret_access_key))
 
   github:
     owner:        genesis-community
@@ -34,16 +38,10 @@ meta:
     main-branch:  main
     private_key:  ((github.private_key))
     access_token: ((github.access_token))
+    name:         ((github.name))
+    email:        ((github.email))
 
   shout:
     url:      ((shout.url))
     username: ((shout.username))
     password: ((shout.password))
-
-  upstream:
-    bosh_releases:
-    - name:       doomsday
-      type:       github-release
-      repository: RubidiumStudios/doomsday-boshrelease
-      path:       manifests/releases/doomsday.yml
-      access_token: ((github.access_token))

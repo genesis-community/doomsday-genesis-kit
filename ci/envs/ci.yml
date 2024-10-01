@@ -3,3 +3,6 @@ kit:
   name: dev
   version: latest
   features: []
+
+genesis:
+  min-version: 3.0.9
