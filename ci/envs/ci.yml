@@ -5,4 +5,4 @@ kit:
   features: []
 
 genesis:
-  min-version: 3.0.9
+  min_version: 3.0.9
