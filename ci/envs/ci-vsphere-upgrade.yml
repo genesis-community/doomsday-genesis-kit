@@ -4,6 +4,11 @@ kit:
     - ((append))
     - userpass
     - tls
+  ci:
+    job: upgrade
+    type: upgrade
+    serial_groups:
+      - deployment
 
 genesis:
   env:   ci-vsphere-upgrade
