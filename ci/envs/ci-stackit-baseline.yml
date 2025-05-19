@@ -1,0 +1,18 @@
+---
+kit:
+  features: []
+  ci:
+    job: deploy
+    serial_groups:
+      - deployment
+
+genesis:
+  env:   ci-stackit-baseline
+  iaas:  stackit
+
+params:
+  network: doomsday
+  vm_type: small
+  ip: 172.30.0.16
+
+  availability_zones: [z1]

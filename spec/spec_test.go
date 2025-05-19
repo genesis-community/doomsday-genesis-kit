@@ -26,5 +26,15 @@ var _ = Describe("Doomsday Kit", func() {
 			CloudConfig: "aws",
 			CPI:         "aws",
 		})
+		Test(Environment{
+			Name:        "base-stackit",
+			CloudConfig: "stackit",
+			CPI:         "stackit",
+		})
+		Test(Environment{
+			Name:        "base-stackit-all-params",
+			CloudConfig: "stackit",
+			CPI:         "stackit",
+		})
 	})
 })

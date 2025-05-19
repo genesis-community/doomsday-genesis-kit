@@ -1,0 +1,21 @@
+---
+kit:
+  features:
+    - lb
+    - tls
+    - userpass
+
+genesis:
+  env:      base-stackit-all-params
+  bosh_env: some-other-env
+  iaas:     stackit
+
+params:
+  vm_type: test-vm-type
+  network: test-network
+  disk_type: test-disk-type
+  ip: 10.99.0.17
+  fqdn: doomsday.stackit.example.com
+  ca_validity_period: 1825
+  cert_validity_period: 396
+  cert_dns_name: doomsday.stackit.example.com

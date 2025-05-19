@@ -1,0 +1,12 @@
+---
+kit:
+  features: []
+
+genesis:
+  env:   base-stackit
+  iaas:  stackit
+
+params:
+  vm_type: small
+  network: test-network
+  ip: 10.99.0.16

@@ -1,0 +1,7 @@
+---
+genesis:
+  bosh_env:   rsat-bc-genesis-ci
+  iaas:       stackit
+
+meta:
+  _ip_prefix: "172.30."

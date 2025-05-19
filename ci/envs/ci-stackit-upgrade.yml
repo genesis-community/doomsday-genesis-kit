@@ -1,0 +1,20 @@
+---
+kit:
+  features:
+    - ((append))
+    - userpass
+    - tls
+  ci:
+    job: upgrade
+    type: upgrade
+    serial_groups:
+      - deployment
+
+genesis:
+  env:   ci-stackit-upgrade
+  iaas:  stackit
+
+params:
+  vm_type: small
+  ip: 172.30.0.17
+  cert_dns_name: doomsday.stackit.example.com

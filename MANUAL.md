@@ -52,6 +52,43 @@ doomsday vault configuration entry what vault path to look in for certificates.
 
 # Cloud Configuration
 
+This kit supports multiple IaaS providers for deploying the Doomsday service:
+
+## OpenStack
+
+For OpenStack deployments, the cloud config needs to specify:
+- Network with appropriate `net_id` and `security_groups`
+- VM types with appropriate `instance_type` and disk settings
+- Disk types with appropriate `type` specifications
+
+## STACKIT
+
+STACKIT deployments are similar to OpenStack but with a key difference: STACKIT has a 1:1 correspondence of networks to subnets, whereas OpenStack has a single overarching network.
+
+For STACKIT deployments, ensure your cloud config includes:
+- Network with appropriate `net_id` and `security_groups` for each subnet
+- VM types with appropriate `instance_type` and disk settings
+- Disk types with appropriate `type` specifications 
+
+Example STACKIT cloud config settings:
+```yaml
+networks:
+  cloud_properties:
+    net_id: <network-id>
+    security_groups: ['default']
+
+vm_types:
+  cloud_properties:
+    instance_type: m1.2
+    boot_from_volume: true
+    root_disk:
+      size: 32
+
+disk_types:
+  cloud_properties:
+    type: storage_premium_perf6
+```
+
 # Features
 
 ## Features Provided by the Doomsday Genesis Kit
