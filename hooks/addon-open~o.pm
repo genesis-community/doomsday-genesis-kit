@@ -67,7 +67,7 @@ sub perform {
 	# Open browser
 	system("$open_cmd https://$url >/dev/null 2>&1");
 
-	return $self->done(1);
+  return $self->done();
 }
 
 1;

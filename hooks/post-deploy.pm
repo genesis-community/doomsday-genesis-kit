@@ -55,7 +55,7 @@ sub perform {
 	# Call parent class perform if it exists
 	$self->SUPER::perform() if $self->can('SUPER::perform');
 
-	return $self->done(1);
+	return $self->done();
 }
 
 1;

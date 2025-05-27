@@ -83,7 +83,7 @@ sub perform {
 	     "Token saved to DOOMSDAY_TOKEN environment variable.\n".
 	     "You can now use this token with the Doomsday API.\n");
 
-	return $self->done(1);
+  return $self->done();
 }
 
 1;

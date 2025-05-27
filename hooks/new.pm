@@ -44,7 +44,7 @@ sub perform {
 	# Offer environment editor
 	run({ interactive => 1 }, 'offer_environment_editor true');
 
-	return $self->done(1);
+  return $self->done();
 }
 
 1;

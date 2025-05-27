@@ -55,7 +55,7 @@ sub perform {
     $self->env->get_call_path_with_env()
   );
 
-  return $self->done(1);
+  return $self->done();
 }
 
 1;
