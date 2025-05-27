@@ -7,6 +7,14 @@ code:    https://github.com/genesis-community/doomsday-genesis-kit
 
 genesis_version_min: 2.8.7
 
+supports:
+- aws
+- azure
+- gcp
+- openstack
+- vsphere
+- stackit
+
 credentials:
   userpass:
     users/admin:
