@@ -3,40 +3,35 @@ meta:
   doomsday:
     network: genesis.env "-doomsday" # Used by dns for tls cert
 
+
+---
+meta:
   ocfp:
     env:
+      cloud: (( concat genesis.env "." genesis.type "." ))
       scale: (( grab params.ocfp_env_scale || "dev" ))
 
     vault:
-      tf_path: (( concat genesis.secrets_mount "tf/" genesis.vault_env ))
+      config_path: (( concat genesis.secrets_mount "config/" genesis.vault_env ))
 
   doomsday:
     azs:
       - (( concat genesis.env "-z2" ))
-
-    disk_type: (( concat "default-" meta.ocfp.env.scale ))
-
-    vm_type:   (( concat "default-" meta.ocfp.env.scale ))
-
-    networks:
-      - name: (( concat genesis.env "-doomsday" ))
-
     stemcell:
       name:    (( grab params.stemcell_name    || "default" ))
-      os:      (( grab params.stemcell_os      || "ubuntu-bionic" ))
+      os:      (( grab params.stemcell_os      || "ubuntu-jammy" ))
       version: (( grab params.stemcell_version || "latest" ))
 
 params:
-  cert_dns_name: (( concat "doomsday." meta.doomsday.network ".bosh" ))
+  doomsday_network:       (( concat meta.ocfp.env.cloud "net-doomsday" ))
+  doomsday_vm_type:       (( concat meta.ocfp.env.cloud "vm-doomsday" ))
+  doomsday_disk_type:     (( concat meta.ocfp.env.cloud "disk-doomsday" ))
+  cert_dns_name:          (( concat "doomsday." meta.doomsday.network ".bosh" ))
 
 instance_groups:
   - name: doomsday
-
-    networks: (( grab meta.doomsday.networks ))
-
-    azs: (( grab meta.doomsday.azs ))
-
-    vm_type: (( grab meta.doomsday.vm_type ))
-
+    azs:      (( grab meta.doomsday.azs ))
+    networks: (( grab params.doomsday_network ))
+    vm_type:  (( grab params.doomsday_vm_type ))
     stemcell: (( grab meta.doomsday.stemcell.name ))
 

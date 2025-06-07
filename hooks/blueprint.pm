@@ -94,10 +94,9 @@ sub perform {
 	if ($blueprint->want_feature('ocfp')) {
 		$blueprint->add_files(qw(
 			ocfp/ocfp.yml
-			ocfp/templates/fqdns.yml
-			ocfp/templates/credhub.yml
-			ocfp/templates/vault.yml
-		));
+		)); # Removed dev/ocfp/templates/fqdns.yml for testing
+	#		ocfp/templates/credhub.yml
+	#		ocfp/templates/vault.yml
 	}
 
 	return $blueprint->done();

@@ -15,8 +15,9 @@ instance_groups:
     instances: 1
     azs:       (( grab params.availability_zones || meta.doomsday.azs ))
     networks:
-      - name:  (( grab params.network || "default" ))
-    vm_type:   (( grab params.vm_type || "default" ))
+      - name:  (( grab params.network || "doomsday" ))
+        static_ips: (( static_ips 0 ))
+    vm_type:   (( grab params.vm_type || "doomsday" ))
     stemcell:  (( grab params.stemcell || "default" ))
     jobs:
       - name: doomsday

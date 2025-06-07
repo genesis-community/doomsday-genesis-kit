@@ -27,46 +27,25 @@ sub perform {
 	my ($self) = @_;
 	return 1 if $self->completed;
 
-	my $network = 'default';
-	my $vm_type = 'default';
-	my $disk_type = 'default';
-
-	if ($self->want_feature('ocfp')) {
-		my $env_scale = $self->env->lookup('params.ocfp_env_scale', 'dev');
-		$vm_type = "default-${env_scale}";
-		$disk_type = "default-${env_scale}";
-		$network = $self->env->name . "-doomsday";
-	}
-
-	# Use values from params if specified
-	$network = $self->env->lookup('params.network', $network);
-	$vm_type = $self->env->lookup('params.vm_type', $vm_type);
-	$disk_type = $self->env->lookup('params.disk_type', $disk_type);
-
 	my $config = $self->build_cloud_config({
 		'networks' => [
-			# For AWS deployments, use naming convention from aws-cloud-config.yml
-			$self->network_definition(
-				$self->iaas_is('aws') ?
-					$self->env->lookup('params.network_name', 'ocfp-mgmt-us-east-1-doomsday') :
-					'doomsday',
-          strategy => 'ocfp',
-          dynamic_subnets => {
-            allocation => {
-              size => 0,
-              statics => 0,
-            },
-            cloud_properties_for_iaas => {
+			$self->network_definition('doomsday', strategy => 'ocfp',
+				dynamic_subnets => {
+					allocation => {
+						size => 0,
+						statics => 0,
+					},
+					cloud_properties_for_iaas => {
 						openstack => {
 							'net_id' => $self->network_reference('id'),
-							'security_groups' => ['default']
+							'security_groups' => ['default'],
 						},
 						stackit => {
 							'net_id' => $self->network_reference('id'),
-							'security_groups' => ['default']
+							'security_groups' => $self->network_reference('sgs', 'get_sgs_by_names', 'ocfp', 'default'),
 						},
 						aws => {
-							'subnet' => $self->network_reference('subnet_id'),
+							'subnet' => $self->network_reference('id'),
 						},
 					},
 				},
@@ -88,42 +67,39 @@ sub perform {
 					stackit => {
 						'instance_type' => $self->for_scale({
 							dev => 'm1.2',
-							prod => 'm1.3'
+							prod => 'm1.2'
 						}, 'm1.2'),
 						'boot_from_volume' => $self->TRUE,
 						'root_disk' => {
-							'size' => 32 # in gigabytes
+							'size' => 16 # in gigabytes
 						},
 					},
-					# AWS VM configuration
-					# Based on best practices for Doomsday deployments
-					# t3.medium for dev environments (2 vCPU, 4 GiB RAM)
-					# t3.large for prod environments (2 vCPU, 8 GiB RAM)
 					aws => {
 						'instance_type' => $self->for_scale({
 							dev => 't3.medium',
-							prod => 't3.large'
+							prod => 'm6i.xlarge'
 						}, 't3.medium'),
 						'ephemeral_disk' => {
-							'size' => 32, # in gigabytes
-							'type' => 'gp3' # General Purpose SSD with good baseline performance
+							'encrypted' => $self->TRUE,
+							'size' => $self->for_scale({
+								dev => 4096,
+								prod => 16384
+							}, 4096),
+							'type' => 'gp3'
+						},
+						'metadata_options' => {
+							'http_tokens' => 'required'
 						},
 					},
 				},
 			),
 		],
 		'disk_types' => [
-			$self->disk_type_definition(
-				$self->iaas_is('aws') ?
-					$self->for_scale({
-						dev => 'doomsday-dev',
-						prod => 'doomsday-prod'
-					}, 'doomsday-dev') :
-					'doomsday',
+			$self->disk_type_definition('doomsday',
 				common => {
 					disk_size => $self->for_scale({
-						dev => gigabytes(16),  # 16GB (16384MB) for dev as per aws-cloud-config.yml
-						prod => gigabytes(32)  # 32GB (32768MB) for prod as per aws-cloud-config.yml
+						dev => gigabytes(16),
+						prod => gigabytes(32)
 					}, gigabytes(16)),
 				},
 				cloud_properties_for_iaas => {
@@ -134,27 +110,34 @@ sub perform {
 						'type' => 'storage_premium_perf6',
 					},
 					aws => {
-						'encrypted' => $self->TRUE, # All disks are encrypted for security
-						'type' => 'gp3',           # General Purpose SSD with good baseline performance
+						'encrypted' => $self->TRUE,
+						'type' => 'gp3',
 					},
 				},
 			),
 		],
-		# VM extensions for load balancing (from aws-cloud-config.yml)
-		'vm_extensions' => [
-			$self->iaas_is('aws') ?
-				{
-					'name' => 'doomsday-lb',
-					'cloud_properties' => {
-						'lb_target_groups' => [
-							'ocfp-mgmt-doomsday-lb-tg'
-						]
-					}
-				} : (),
-		],
+                # VM extensions for load balancing (from aws-cloud-config.yml)
+                'vm_extensions' => [
+                      $self->iaas_is('aws') ?
+                               {
+                                       'name' => 'doomsday-lb',
+                                       'cloud_properties' => {
+                                               'lb_target_groups' => [
+                                                        'ocfp-mgmt-doomsday-lb-tg'
+                                                ]
+                                       }
+                               } : (),
+               ],
 	});
 
-	return $self->done($config);
+	$self->done($config);
+}
+
+sub get_sgs_by_names {
+	my ($self, $subnet_data, $ref, @names) = @_;
+	my @ids = map {$subnet_data->{$ref}{$_}{id}} @names;
+	# TODO: Error checking
+	return \@ids
 }
 
 1;
