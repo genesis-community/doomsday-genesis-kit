@@ -129,6 +129,9 @@ sub perform {
 	});
 
 	$self->done($config);
+
+	return 1;
+
 }
 
 sub get_sgs_by_names {
