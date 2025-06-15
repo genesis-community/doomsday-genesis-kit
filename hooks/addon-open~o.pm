@@ -1,10 +1,8 @@
-#!/usr/bin/env perl
-# vim: set ts=2 sw=2 sts=2 foldmethod=marker
-package Genesis::Hook::Addon::Doomsday::Open v4.0.0;
+# vim: set ts=2 sw=2 sts=2 noet fdm=marker foldlevel=1:
+package Genesis::Hook::Addon::Doomsday::Open;
 
-use strict;
-use warnings;
 use v5.20;
+use warnings;
 
 # Only needed for development
 BEGIN {push @INC, $ENV{GENESIS_LIB} ? $ENV{GENESIS_LIB} : $ENV{HOME}.'/.genesis/lib'}
@@ -46,7 +44,7 @@ sub perform {
 	}
 
 	# Check if command exists
-	my ($_, $rc) = run("command -v $open_cmd >/dev/null 2>&1");
+	my ($out, $rc) = run("command -v $open_cmd >/dev/null 2>&1");
 	bail("$open_cmd command not found") if $rc;
 
 	# Get credentials
