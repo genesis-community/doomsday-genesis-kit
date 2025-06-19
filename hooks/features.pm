@@ -27,8 +27,14 @@ sub perform {
 			$self->add_feature($feature);
 
 			# Add default features for OCFP Reference Architecture
-			foreach my $f (qw(userpass tls lb)) {
+			foreach my $f (qw(userpass tls)) {
 				$self->add_feature($f) unless $self->has_feature($f);
+			}
+			# if AWS add lb
+			if ($self->iaas eq 'aws') {
+				foreach my $f (qw(lb)) {
+					$self->add_feature($f) unless $self->has_feature($f);
+				}
 			}
 		} else {
 			# Add all other features as-is

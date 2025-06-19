@@ -1,4 +1,3 @@
-# vim: set ts=2 sw=2 sts=2 noet fdm=marker foldlevel=1:
 package Genesis::Hook::Info::Doomsday;
 
 use v5.20;
@@ -6,7 +5,7 @@ use warnings;
 
 # Only needed for development
 BEGIN {push @INC, $ENV{GENESIS_LIB} ? $ENV{GENESIS_LIB} : $ENV{HOME}.'/.genesis/lib'}
-use parent qw(Genesis::Hook::Info);
+use parent qw(Genesis::Hook);
 
 use Genesis qw/info bail run/;
 
@@ -53,7 +52,8 @@ sub perform {
     $self->env->get_call_path_with_env()
   );
 
-  return $self->done();
+  return $self->done(1);
 }
 
 1;
+# vim: set ts=2 sw=2 sts=2 noet fdm=marker foldlevel=1:

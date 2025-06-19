@@ -1,4 +1,3 @@
-# vim: set ts=2 sw=2 sts=2 noet fdm=marker foldlevel=1:
 package Genesis::Hook::PreDeploy::Doomsday;
 
 use v5.20;
@@ -6,9 +5,9 @@ use warnings;
 
 # Only needed for development
 BEGIN {push @INC, $ENV{GENESIS_LIB} ? $ENV{GENESIS_LIB} : $ENV{HOME}.'/.genesis/lib'}
-use parent qw(Genesis::Hook::PreDeploy);
+use parent qw(Genesis::Hook);
 
-use Genesis qw/info/;
+use Genesis qw/info pretty_duration/;
 use Time::HiRes qw/gettimeofday/;
 
 sub init {
@@ -33,7 +32,7 @@ sub perform {
 	my $missing = 0;
 
 	foreach my $cred (@required_creds) {
-		unless ($self->vault->has("$vault_prefix$cred")) {
+		unless ($self->env->vault->has("$vault_prefix$cred")) {
 			$missing = 1;
 			info("\n  - Missing required credential: #R{$cred}");
 		}
@@ -57,3 +56,4 @@ sub perform {
 }
 
 1;
+# vim: set ts=2 sw=2 sts=2 noet fdm=marker foldlevel=1:

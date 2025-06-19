@@ -1,4 +1,3 @@
-# vim: set ts=2 sw=2 sts=2 noet fdm=marker foldlevel=1:
 package Genesis::Hook::CloudConfig::Doomsday;
 
 use v5.20;
@@ -115,17 +114,17 @@ sub perform {
 			),
 		],
                 # VM extensions for load balancing (from aws-cloud-config.yml)
-                'vm_extensions' => [
-                      $self->iaas_is('aws') ?
-                               {
-                                       'name' => 'doomsday-lb',
-                                       'cloud_properties' => {
-                                               'lb_target_groups' => [
-                                                        'ocfp-mgmt-doomsday-lb-tg'
-                                                ]
-                                       }
-                               } : (),
-               ],
+ 		'vm_extensions' => [
+			$self->vm_extension_definition('doomsday-lb',
+				cloud_properties_for_iaas => {
+					aws => {
+						'lb_target_groups' => [
+							'doomsday-lb',
+						],
+					},
+				},
+			),
+		],
 	});
 
 	$self->done($config);
@@ -142,3 +141,4 @@ sub get_sgs_by_names {
 }
 
 1;
+# vim: set ts=2 sw=2 sts=2 noet fdm=marker foldlevel=1:

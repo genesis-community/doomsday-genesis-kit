@@ -1,22 +1,18 @@
 ---
 meta:
-  doomsday:
-    network: genesis.env "-doomsday" # Used by dns for tls cert
-
-
----
-meta:
   ocfp:
     env:
       cloud: (( concat genesis.env "." genesis.type "." ))
-      scale: (( grab params.ocfp_env_scale || "dev" ))
 
     vault:
-      config_path: (( concat genesis.secrets_mount "config/" genesis.vault_env ))
+      config_prefix: (( grab params.ocfp_vault_config_prefix || "config/" ))
+      config: (( concat genesis.ocfp_config_mount genesis.ocfp_env ))
 
   doomsday:
+    ip:     (( vault meta.ocfp.vault.config "/net/subnets/ocfp-1/reserved-ips:doomsday_ip" ))
     azs:
       - (( concat genesis.env "-z2" ))
+        #    network: genesis.env "-doomsday" # Used by dns for tls cert
     stemcell:
       name:    (( grab params.stemcell_name    || "default" ))
       os:      (( grab params.stemcell_os      || "ubuntu-jammy" ))
@@ -31,7 +27,11 @@ params:
 instance_groups:
   - name: doomsday
     azs:      (( grab meta.doomsday.azs ))
-    networks: (( grab params.doomsday_network ))
     vm_type:  (( grab params.doomsday_vm_type ))
     stemcell: (( grab meta.doomsday.stemcell.name ))
+    networks:
+      - (( replace ))
+      - name: (( grab params.doomsday_network ))
+        static_ips:
+          - (( grab meta.doomsday.ip ))
 
