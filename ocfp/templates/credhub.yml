@@ -9,14 +9,14 @@ instance_groups:
             - type: credhub
               name: {{OCFP_ENV_NAME}}-credhub
               properties:
-                address:  (( vault "exodus/{{OCFP_ENV_NAME}}/bosh:credhub_url" )) 
-                ca_certs: (( vault "exodus/{{OCFP_ENV_NAME}}/bosh:credhub_ca_cert" )) 
+                address:  (( vault "/exodus/{{OCFP_ENV_NAME}}/bosh:credhub_url" )) 
+                ca_certs: (( vault "/exodus/{{OCFP_ENV_NAME}}/bosh:credhub_ca_cert" )) 
                 insecure_skip_verify: true
                 auth:
                   grant_type: client_credentials
-                  client_id:     (( vault "exodus/{{OCFP_ENV_NAME}}/bosh:doomsday_client_id" ))
-                  client_secret: (( vault "exodus/{{OCFP_ENV_NAME}}/bosh:doomsday_client_secret" ))
+                  client_id:     (( vault "/exodus/{{OCFP_ENV_NAME}}/bosh:doomsday_client_id" ))
+                  client_secret: (( vault "/exodus/{{OCFP_ENV_NAME}}/bosh:doomsday_client_secret" ))
                   #grant_type: password
-                  #username: (( vault "exodus/{{OCFP_ENV_NAME}}/bosh:credhub_username" ))
-                  #password: (( vault "exodus/{{OCFP_ENV_NAME}}/bosh:credhub_password" ))
+                  #username: (( vault "/exodus/{{OCFP_ENV_NAME}}/bosh:credhub_username" ))
+                  #password: (( vault "/exodus/{{OCFP_ENV_NAME}}/bosh:credhub_password" ))
 
