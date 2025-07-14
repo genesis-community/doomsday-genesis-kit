@@ -169,8 +169,7 @@ sub _get_vault_prefix {
 	
 	if ($self->want_feature('sharded-vault-paths')) {
 		# Not recommended, but supported for backward compatibility
-		my $path = sprintf("%s/%s/doomsday/vault/prefixes",
-			$self->env->secrets_mount,
+		my $path = sprintf("%s/doomsday/vault/prefixes",
 			$self->env->name =~ s/-/\//gr
 		);
 		
@@ -183,7 +182,8 @@ sub _get_vault_prefix {
 		}
 	}
 	
-	return "secret";
+	# Return empty string since Genesis handles the vault mount/prefix
+	return "";
 }
 
 sub _render_ocfp_template {
@@ -226,7 +226,7 @@ sub _render_fqdns_template {
 	my $vault = $self->env->vault;
 	
 	for my $env_type ('ocf', 'mgmt') {
-		my $path = "${vault_prefix}/tf/${env_path}/${env_type}/fqdns";
+		my $path = "tf/${env_path}/${env_type}/fqdns";
 		
 		# Check if path exists first
 		if ($vault->has($path)) {
