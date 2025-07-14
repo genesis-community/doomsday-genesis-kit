@@ -102,29 +102,30 @@ sub perform {
 # OCFP Template Processing Methods {{{
 sub _process_ocfp_templates {
 	my ($self) = @_;
-	
+
 	# Get management environment and OCF environments from BOSH deployments
 	my $mgmt_env = $self->env->name;
 	my @ocf_envs = $self->_get_ocf_environments();
-	
+
 	# Process templates for each environment
 	for my $env_name ($mgmt_env, @ocf_envs) {
 		my $env_path = $env_name =~ s/-/\//gr;
-		my $vault_prefix = $self->_get_vault_prefix($env_name);
-		
+		my $vault_prefix = $self->env->secrets_mount;
+
 		# Render templates for this environment
 		my @rendered_files = ();
-		
+
 		# Always render vault template
 		push @rendered_files, $self->_render_ocfp_template('vault', $env_name, $env_path, $vault_prefix);
-		
+
 		# Render credhub template
 		push @rendered_files, $self->_render_ocfp_template('credhub', $env_name, $env_path, $vault_prefix);
-		
+
 		# Render FQDNs template if FQDNs exist
 		my $fqdns_file = $self->_render_fqdns_template($env_name, $env_path, $vault_prefix);
+
 		push @rendered_files, $fqdns_file if $fqdns_file;
-		
+
 		# Add all rendered files to the blueprint
 		$self->add_files(@rendered_files);
 	}
@@ -133,19 +134,19 @@ sub _process_ocfp_templates {
 sub _get_ocf_environments {
 	my ($self) = @_;
 	my @ocf_envs = ();
-	
+
 	# Get BOSH handle from environment
 	eval {
 		my $bosh = $self->env->bosh;
-		
+
 		# Execute bosh deployments command
 		my ($out, $rc, $err) = $bosh->execute('deployments', '--json');
-		
+
 		if ($rc == 0 && $out) {
 			# Parse JSON output to extract OCF environment names
 			require JSON;
 			my $data = JSON::decode_json($out);
-			
+
 			# BOSH deployments --json returns an array of deployment objects
 			if ($data && ref($data) eq 'ARRAY') {
 				for my $deployment (@$data) {
@@ -160,78 +161,56 @@ sub _get_ocf_environments {
 		warning("Failed to get BOSH deployments: $@");
 		info("Only monitoring the current management environment");
 	}
-	
-	return @ocf_envs;
-}
 
-sub _get_vault_prefix {
-	my ($self, $env_name) = @_;
-	
-	if ($self->want_feature('sharded-vault-paths')) {
-		# Not recommended, but supported for backward compatibility
-		my $path = sprintf("%s/doomsday/vault/prefixes",
-			$self->env->name =~ s/-/\//gr
-		);
-		
-		# Get vault handle and retrieve the prefix
-		my $vault = $self->env->vault;
-		my $prefix = $vault->get("$path:$env_name");
-		
-		if ($prefix) {
-			return $prefix;
-		}
-	}
-	
-	# Return empty string since Genesis handles the vault mount/prefix
-	return "";
+	return @ocf_envs;
 }
 
 sub _render_ocfp_template {
 	my ($self, $template_name, $env_name, $env_path, $vault_prefix) = @_;
-	
+
 	my $srcdir = 'ocfp/templates';
 	my $dstdir = 'dynamic';
 	my $src = "$srcdir/${template_name}.yml";
 	my $dst = "$dstdir/${env_name}-${template_name}.yml";
-	
+
 	# Ensure dynamic directory exists in kit's working directory
 	my $kit_dynamic_dir = $self->kit->path($dstdir);
 	mkdir_or_fail($kit_dynamic_dir) unless -d $kit_dynamic_dir;
-	
+
 	# Read template and substitute variables
 	my $src_path = $self->kit->path($src);
 	my $dst_path = $self->kit->path($dst);  # Changed from $self->env->path
-	
+
 	open my $src_fh, '<', $src_path or bail("Cannot open template $src: $!");
 	open my $dst_fh, '>', $dst_path or bail("Cannot open output file $dst: $!");
-	
+
 	while (my $line = <$src_fh>) {
-		$line =~ s/\{\{OCFP_ENV_NAME\}\}/$env_name/g;
-		$line =~ s/\{\{OCFP_ENV_PATH\}\}/$env_path/g;
-		$line =~ s/\{\{OCFP_VAULT_PREFIX\}\}/$vault_prefix/g;
+		$line =~ s#\{\{OCFP_ENV_NAME\}\}#$env_name#g;
+		$line =~ s#\{\{OCFP_ENV_PATH\}\}#$env_path#g;
+		$line =~ s#\{\{OCFP_VAULT_PREFIX\}\}#$vault_prefix#g;
 		print $dst_fh $line;
 	}
-	
+
 	close $src_fh;
 	close $dst_fh;
-	
+
 	return $dst;
 }
 
 sub _render_fqdns_template {
 	my ($self, $env_name, $env_path, $vault_prefix) = @_;
-	
+
 	# Get FQDNs from vault for both OCF and management environments
 	my @fqdns = ();
 	my $vault = $self->env->vault;
-	
+
 	for my $env_type ('ocf', 'mgmt') {
 		my $path = "tf/${env_path}/${env_type}/fqdns";
-		
+
 		# Check if path exists first
 		if ($vault->has($path)) {
 			my $data = $vault->get($path);
-			
+
 			# Handle different data formats
 			if ($data) {
 				if (ref($data) eq 'HASH') {
@@ -244,20 +223,20 @@ sub _render_fqdns_template {
 			}
 		}
 	}
-	
+
 	# Only render template if we found FQDNs
 	return unless @fqdns;
-	
+
 	# Render the base template
 	my $dst = $self->_render_ocfp_template('fqdns', $env_name, $env_path, $vault_prefix);
-	
+
 	# Append the FQDNs to the rendered file
 	open my $fh, '>>', $self->kit->path($dst) or bail("Cannot append to $dst: $!");
 	for my $fqdn (@fqdns) {
 		print $fh "                  - $fqdn\n";
 	}
 	close $fh;
-	
+
 	return $dst;
 }
 # }}}
