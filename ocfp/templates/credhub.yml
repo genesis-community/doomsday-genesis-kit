@@ -1,7 +1,4 @@
 ---
-meta:
-  exodus_{{OCFP_ENV_NAME}}: (( concat genesis.exodus_mount "/{{OCFP_ENV_NAME}}/bosh" ))
-
 instance_groups:
   - name: doomsday
     jobs:
@@ -12,14 +9,14 @@ instance_groups:
             - type: credhub
               name: {{OCFP_ENV_NAME}}-credhub
               properties:
-                address:  (( vault meta.exodus_{{OCFP_ENV_NAME}} ":credhub_url" )) 
-                ca_certs: (( vault meta.exodus_{{OCFP_ENV_NAME}} ":credhub_ca_cert" )) 
+                address:  (( vault "/exodus/{{OCFP_ENV_NAME}}/bosh:credhub_url" )) 
+                ca_certs: (( vault "/exodus/{{OCFP_ENV_NAME}}/bosh:credhub_ca_cert" )) 
                 insecure_skip_verify: true
                 auth:
                   grant_type: client_credentials
-                  client_id:     (( vault meta.exodus_{{OCFP_ENV_NAME}} ":doomsday_client_id" ))
-                  client_secret: (( vault meta.exodus_{{OCFP_ENV_NAME}} ":doomsday_client_secret" ))
+                  client_id:     (( vault "/exodus/{{OCFP_ENV_NAME}}/bosh:doomsday_client_id" ))
+                  client_secret: (( vault "/exodus/{{OCFP_ENV_NAME}}/bosh:doomsday_client_secret" ))
                   #grant_type: password
-                  #username: (( vault meta.exodus_{{OCFP_ENV_NAME}} ":credhub_username" ))
-                  #password: (( vault meta.exodus_{{OCFP_ENV_NAME}} ":credhub_password" ))
+                  #username: (( vault "/exodus/{{OCFP_ENV_NAME}}/bosh:credhub_username" ))
+                  #password: (( vault "/exodus/{{OCFP_ENV_NAME}}/bosh:credhub_password" ))
 
