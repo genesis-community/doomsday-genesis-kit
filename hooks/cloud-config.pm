@@ -115,8 +115,7 @@ sub perform {
 		],
                 # VM extensions for load balancing (from aws-cloud-config.yml)
  		'vm_extensions' => [
-			$self->vm_extension_definition('doomsday-lb',
-				cloud_properties_for_iaas => {
+			$self->vm_extension_definition('doomsday-lb' => {
 					aws => {
 						'lb_target_groups' => [
 							'doomsday-lb',
