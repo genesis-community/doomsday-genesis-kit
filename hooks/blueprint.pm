@@ -17,10 +17,12 @@ my $_virtual_features = {
 	map {($_,1)} qw(ocfp sharded-vault-paths)
 };
 
+
 sub init {
 	my $class = shift;
 	my $obj = $class->SUPER::init(@_);
 	$obj->check_minimum_genesis_version('3.1.0-rc.20');
+	$obj->vault_deps = ();
 	return $obj;
 }
 
@@ -90,9 +92,7 @@ sub perform {
 
 	# Handle OCFP feature
 	if ($blueprint->want_feature('ocfp')) {
-		$blueprint->add_files(qw(
-			ocfp/ocfp.yml
-		));
+		$blueprint->add_files(qw( ocfp/ocfp.yml));
 		$blueprint->_process_ocfp_templates();
 	}
 
@@ -107,6 +107,12 @@ sub _process_ocfp_templates {
 	my $mgmt_env = $self->env->name;
 	my @ocf_envs = $self->_get_ocf_environments();
 
+	# Vault Deployments
+	for my $vault_env ($self->vault_deps) {
+		# Always render vault template
+		push @rendered_files, $self->_render_ocfp_template('vault', $env_name, $env_path, $vault_prefix);
+	}
+
 	# Process templates for each environment
 	for my $env_name ($mgmt_env, @ocf_envs) {
 		my $env_path = $env_name =~ s/-/\//gr;
@@ -115,8 +121,14 @@ sub _process_ocfp_templates {
 		# Render templates for this environment
 		my @rendered_files = ();
 
-		# Always render vault template
-		push @rendered_files, $self->_render_ocfp_template('vault', $env_name, $env_path, $vault_prefix);
+		# TODO: Change the external configured location to be more explicit, something like secret/config/vaults/X:{url,ca,namespace,role_id,secret_id}
+		# NOTE: This is the current functionality, to be changed to new location that makes more sense
+		# if meta.vault /vault:{url,ca,namespace,role_id,secret_id}
+		my $vault_path = $self->env->secrets_base
+	  if ($self->env->Vault->has_key("$vault_path/vault:url") && $self->env->Vault->has_key("$vault_path/vault:role_id")) {
+			# External Configured Vault, rener the external vault template:
+			push @rendered_files, $self->_render_ocfp_template('vault-ext', $env_name, $env_path, $vault_prefix);
+		}
 
 		# Render credhub template
 		push @rendered_files, $self->_render_ocfp_template('credhub', $env_name, $env_path, $vault_prefix);
@@ -152,6 +164,8 @@ sub _get_ocf_environments {
 				for my $deployment (@$data) {
 					if ($deployment->{name} && $deployment->{name} =~ /^(.+)-bosh$/) {
 						push @ocf_envs, $1;
+					} elsif ($deployment->{name} && $deployment->{name} =~ /^(.+)-vault$/) {
+						push $self->{vault_deps}->@*, $1; # postfix dereference yo!
 					}
 				}
 			}
