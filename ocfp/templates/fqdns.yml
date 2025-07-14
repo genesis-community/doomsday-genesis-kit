@@ -7,7 +7,7 @@ instance_groups:
           backends:
             - (( append ))
             - type: tlsclient
-              name: {{OCFP_ENV_NAME}}-fqdns
+              name: "{{OCFP_ENV_NAME}}-fqdns"
               properties:
                 timeout: 20
                 hosts:
