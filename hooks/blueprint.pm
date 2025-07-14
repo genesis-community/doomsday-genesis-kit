@@ -7,7 +7,7 @@ use warnings; # Genesis min perl version is 5.20
 BEGIN {push @INC, $ENV{GENESIS_LIB} ? $ENV{GENESIS_LIB} : $ENV{HOME}.'/.genesis/lib'}
 use parent qw(Genesis::Hook::Blueprint);
 
-use Genesis qw/bail info warning error in_array/;
+use Genesis qw/bail info warning error in_array mkdir_or_fail/;
 
 my $_addon_features = {
 	map {($_,1)} qw(tls lb userpass)
@@ -134,25 +134,31 @@ sub _get_ocf_environments {
 	my ($self) = @_;
 	my @ocf_envs = ();
 	
-	# Run bosh deployments command to get list of deployments
-	my ($rc, $output) = $self->env->run('bosh deps --json', ignore_errors => 1);
-	
-	if ($rc == 0 && $output) {
-		# Parse JSON output to extract OCF environment names
-		eval {
+	# Get BOSH handle from environment
+	eval {
+		my $bosh = $self->env->bosh;
+		
+		# Execute bosh deployments command
+		my ($out, $rc, $err) = $bosh->execute('deployments', '--json');
+		
+		if ($rc == 0 && $out) {
+			# Parse JSON output to extract OCF environment names
 			require JSON;
-			my $data = JSON::decode_json($output);
-			if ($data && $data->{Tables} && $data->{Tables}[0] && $data->{Tables}[0]{Rows}) {
-				for my $row (@{$data->{Tables}[0]{Rows}}) {
-					if ($row->{name} && $row->{name} =~ /^(.+)-bosh$/) {
+			my $data = JSON::decode_json($out);
+			
+			# BOSH deployments --json returns an array of deployment objects
+			if ($data && ref($data) eq 'ARRAY') {
+				for my $deployment (@$data) {
+					if ($deployment->{name} && $deployment->{name} =~ /^(.+)-bosh$/) {
 						push @ocf_envs, $1;
 					}
 				}
 			}
-		};
-		if ($@) {
-			warning("Failed to parse BOSH deployments JSON: $@");
 		}
+	};
+	if ($@) {
+		warning("Failed to get BOSH deployments: $@");
+		info("Only monitoring the current management environment");
 	}
 	
 	return @ocf_envs;
@@ -163,15 +169,17 @@ sub _get_vault_prefix {
 	
 	if ($self->want_feature('sharded-vault-paths')) {
 		# Not recommended, but supported for backward compatibility
-		my $path = sprintf("%s/%s/doomsday/vault/prefixes:%s",
+		my $path = sprintf("%s/%s/doomsday/vault/prefixes",
 			$self->env->secrets_mount,
-			$self->env->name =~ s/-/\//gr,
-			$env_name
+			$self->env->name =~ s/-/\//gr
 		);
-		my ($rc, $output) = $self->env->run(['safe', 'get', $path], ignore_errors => 1);
-		if ($rc == 0 && $output) {
-			chomp $output;
-			return $output;
+		
+		# Get vault handle and retrieve the prefix
+		my $vault = $self->env->vault;
+		my $prefix = $vault->get("$path:$env_name");
+		
+		if ($prefix) {
+			return $prefix;
 		}
 	}
 	
@@ -187,7 +195,7 @@ sub _render_ocfp_template {
 	my $dst = "$dstdir/${env_name}-${template_name}.yml";
 	
 	# Ensure dynamic directory exists
-	$self->env->mkdir_or_fail($dstdir) unless -d $self->env->path($dstdir);
+	mkdir_or_fail($self->env->path($dstdir)) unless -d $self->env->path($dstdir);
 	
 	# Read template and substitute variables
 	my $src_path = $self->kit->path($src);
@@ -214,15 +222,23 @@ sub _render_fqdns_template {
 	
 	# Get FQDNs from vault for both OCF and management environments
 	my @fqdns = ();
+	my $vault = $self->env->vault;
 	
 	for my $env_type ('ocf', 'mgmt') {
 		my $path = "${vault_prefix}/tf/${env_path}/${env_type}/fqdns";
-		my ($rc, $output) = $self->env->run(['safe', 'get', $path], ignore_errors => 1);
-		if ($rc == 0 && $output) {
-			# Parse output to extract FQDNs
-			for my $line (split /\n/, $output) {
-				if ($line =~ /:\s+(.+)$/) {
-					push @fqdns, $1;
+		
+		# Check if path exists first
+		if ($vault->has($path)) {
+			my $data = $vault->get($path);
+			
+			# Handle different data formats
+			if ($data) {
+				if (ref($data) eq 'HASH') {
+					# If it's a hash, get all values
+					push @fqdns, values %$data;
+				} elsif (!ref($data)) {
+					# If it's a scalar, add it directly
+					push @fqdns, $data;
 				}
 			}
 		}
