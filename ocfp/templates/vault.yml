@@ -1,4 +1,7 @@
 ---
+meta:
+  vault_{{OCFP_ENV_NAME}}: (( concat genesis.secrets_mount "/{{OCFP_ENV_PATH}}/doomsday/vault" ))
+
 instance_groups:
   - name: doomsday
     jobs:
@@ -10,13 +13,13 @@ instance_groups:
               name: {{OCFP_ENV_NAME}}-vault
               refresh_interval: 60
               properties:
-                base_path: "/{{OCFP_ENV_PATH}}"
-                address:   (( vault "/{{OCFP_ENV_PATH}}/doomsday/vault:url" ))
-                ca_certs:  (( vault "/{{OCFP_ENV_PATH}}/doomsday/vault:ca" ))
-                namespace: (( vault "/{{OCFP_ENV_PATH}}/doomsday/vault:namespace" ))
+                base_path: (( concat genesis.secrets_mount "/{{OCFP_ENV_PATH}}" ))
+                address:   (( vault meta.vault_{{OCFP_ENV_NAME}} ":url" ))
+                ca_certs:  (( vault meta.vault_{{OCFP_ENV_NAME}} ":ca" ))
+                namespace: (( vault meta.vault_{{OCFP_ENV_NAME}} ":namespace" ))
                 insecure_skip_verify: true
                 trace: true
                 auth:
-                  role_id:   (( vault "/{{OCFP_ENV_PATH}}/doomsday/vault:role_id" ))
-                  secret_id: (( vault "/{{OCFP_ENV_PATH}}/doomsday/vault:secret_id" ))
+                  role_id:   (( vault meta.vault_{{OCFP_ENV_NAME}} ":role_id" ))
+                  secret_id: (( vault meta.vault_{{OCFP_ENV_NAME}} ":secret_id" ))
 
