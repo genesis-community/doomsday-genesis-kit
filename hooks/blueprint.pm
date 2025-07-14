@@ -194,12 +194,13 @@ sub _render_ocfp_template {
 	my $src = "$srcdir/${template_name}.yml";
 	my $dst = "$dstdir/${env_name}-${template_name}.yml";
 	
-	# Ensure dynamic directory exists
-	mkdir_or_fail($self->env->path($dstdir)) unless -d $self->env->path($dstdir);
+	# Ensure dynamic directory exists in kit's working directory
+	my $kit_dynamic_dir = $self->kit->path($dstdir);
+	mkdir_or_fail($kit_dynamic_dir) unless -d $kit_dynamic_dir;
 	
 	# Read template and substitute variables
 	my $src_path = $self->kit->path($src);
-	my $dst_path = $self->env->path($dst);
+	my $dst_path = $self->kit->path($dst);  # Changed from $self->env->path
 	
 	open my $src_fh, '<', $src_path or bail("Cannot open template $src: $!");
 	open my $dst_fh, '>', $dst_path or bail("Cannot open output file $dst: $!");
@@ -251,7 +252,7 @@ sub _render_fqdns_template {
 	my $dst = $self->_render_ocfp_template('fqdns', $env_name, $env_path, $vault_prefix);
 	
 	# Append the FQDNs to the rendered file
-	open my $fh, '>>', $self->env->path($dst) or bail("Cannot append to $dst: $!");
+	open my $fh, '>>', $self->kit->path($dst) or bail("Cannot append to $dst: $!");
 	for my $fqdn (@fqdns) {
 		print $fh "                  - $fqdn\n";
 	}
