@@ -11,12 +11,12 @@ instance_groups:
               refresh_interval: 60
               properties:
                 base_path: "/{{OCFP_ENV_PATH}}"
-                address:   (( vault "{{OCFP_VAULT_PREFIX}}{{OCFP_ENV_PATH}}/doomsday/vault:url" ))
-                ca_certs:  (( vault "{{OCFP_VAULT_PREFIX}}{{OCFP_ENV_PATH}}/doomsday/vault:ca" ))
-                namespace: (( vault "{{OCFP_VAULT_PREFIX}}{{OCFP_ENV_PATH}}/doomsday/vault:namespace" ))
+                address:   (( vault "{{OCFP_VAULT_PREFIX}}{{OCFP_ENV_PATH}}/vault:url" ))
+                ca_certs:  (( vault "{{OCFP_VAULT_PREFIX}}{{OCFP_ENV_PATH}}/vault:ca" ))
+                namespace: (( vault "{{OCFP_VAULT_PREFIX}}{{OCFP_ENV_PATH}}/vault:namespace" ))
                 insecure_skip_verify: true
                 trace: true
                 auth:
-                  role_id:   (( vault "{{OCFP_VAULT_PREFIX}}{{OCFP_ENV_PATH}}/doomsday/vault:role_id" ))
-                  secret_id: (( vault "{{OCFP_VAULT_PREFIX}}{{OCFP_ENV_PATH}}/doomsday/vault:secret_id" ))
+                  role_id:   (( vault "{{OCFP_VAULT_PREFIX}}{{OCFP_ENV_PATH}}/vault:role_id" ))
+                  secret_id: (( vault "{{OCFP_VAULT_PREFIX}}{{OCFP_ENV_PATH}}/vault:secret_id" ))
 
