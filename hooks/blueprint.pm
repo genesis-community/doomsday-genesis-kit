@@ -109,7 +109,6 @@ sub _process_ocfp_templates {
 
 	# Vault Deployments
 	for my $vault_env ($self->vault_deps) {
-		# Always render vault template
 		push @rendered_files, $self->_render_ocfp_template('vault', $env_name, $env_path, $vault_prefix);
 	}
 

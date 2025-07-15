@@ -13,7 +13,7 @@ instance_groups:
                 base_path: "{{OCFP_VAULT_PREFIX}}{{OCFP_ENV_PATH}}"
                 address:   (( vault "{{OCFP_VAULT_PREFIX}}{{OCFP_ENV_PATH}}/vault:url" ))
                 ca_certs:  (( vault "{{OCFP_VAULT_PREFIX}}{{OCFP_ENV_PATH}}/vault:ca" ))
-                namespace: (( vault "{{OCFP_VAULT_PREFIX}}{{OCFP_ENV_PATH}}/vault:namespace" ))
+                namespace: "" # (( vault "{{OCFP_VAULT_PREFIX}}{{OCFP_ENV_PATH}}/vault:namespace" ))
                 insecure_skip_verify: true
                 trace: true
                 auth:
