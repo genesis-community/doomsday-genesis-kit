@@ -80,7 +80,7 @@ sub perform {
 	mkfile_or_fail(
 		"$ENV{HOME}/.doomsday_token",
 		"export DOOMSDAY_TOKEN=\"$jwt\"\n"
-	)
+	);
 
 	info(
 		"\n#G{Successfully logged into Doomsday!}\n".
