@@ -96,15 +96,15 @@ sub _setup_doomsday_approle {
 
   my $mount_type = $sec_ver == 1 ? "kv_v1" : "kv_v2";
   if ($mount_type eq "kv_v1") {
-    $policy .= "path \"$sec_mnt/*\"$capabilities\n";
-    $policy .= "path \"$exo_mnt/*\"$capabilities\n";
+    $policy .= "path \"$sec_mnt*\"$capabilities\n";
+    $policy .= "path \"$exo_mnt*\"$capabilities\n";
   } else {
 		# Secrets
-    $policy .= "path \"${sec_mnt}/data/*\"$capabilities\n";
-    $policy .= "path \"${sec_mnt}/metadata/*\"$capabilities\n";
+    $policy .= "path \"${sec_mnt}data/*\"$capabilities\n";
+    $policy .= "path \"${sec_mnt}metadata/*\"$capabilities\n";
 		# Exodus
-    $policy .= "path \"${exo_mnt}/data/*\"$capabilities\n";
-    $policy .= "path \"${exo_mnt}/metadata/*\"$capabilities\n";
+    $policy .= "path \"${exo_mnt}data/*\"$capabilities\n";
+    $policy .= "path \"${exo_mnt}metadata/*\"$capabilities\n";
   }
 
 	info("#Y{Policy file being applied to Doomsday}\n\n%s\n\n", $policy);
@@ -159,24 +159,28 @@ sub _setup_doomsday_approle {
 
 sub _match_mount {
   my ($self, $path) = @_;
-  
-  # For Genesis deployments, we typically use standard mounts
-  # The path structure is usually: <mount>/<deployment>/<key>
-  
-  # Extract the mount point from the path
-  my ($mount) = $path =~ m|^([^/]+)|;
-  return undef unless $mount;
-  
-  # Check if it's a v1 or v2 KV mount
-  # For now, assume v2 (which is the default for newer vaults)
-  # You can enhance this by actually querying vault for mount info
-  my $version = 2;
-  
-  # Extract the path within the mount
-  my $path_within_mount = $path;
-  $path_within_mount =~ s|^$mount/?||;
-  
-  return [$mount, $path_within_mount, $version];
+  my $output = $self->vault->query("vault","secrets","list","--detailed");
+
+  # Get all kv mounts with versions
+  my @mounts = ();
+  my @lines = split(/\n/, $output);
+  for my $line (@lines) {
+    if ($line =~ /^(\/?)([^\/].*\/)  *kv  *.*map\[version:([12])\]/) {
+      push @mounts, [ "/$2", $3 ];
+    }
+  }
+
+  # Find best match
+  for my $mount_info (@mounts) {
+    my ($mount, $version) = @$mount_info;
+    if ($path =~ /^$mount(.*)/) {
+      my $subpath = $1 || "";
+      $subpath =~ s/^\///;
+      return [ $mount, $subpath, $version ];
+    }
+  }
+
+  return undef;
 }
 
 1;
