@@ -55,7 +55,7 @@ sub perform {
 		return $self->done(0) unless $continue;
 	}
 
-	my ($json, $rc, $err) = read_json_from($self->curl(
+	my ($json, $rc, $err) = read_json_from(curl(
 		{
 			method  => 'POST',
 			headers => {
