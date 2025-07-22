@@ -55,33 +55,39 @@ sub perform {
 		return $self->done(0) unless $continue;
 	}
 
-	# Perform login
-	my $auth_url = "https://$url/v1/auth";
-	my $curl_cmd = "curl -s";
-	$curl_cmd .= " -k" unless $validate_ssl;
-	$curl_cmd .= " -X POST -H 'Content-Type: application/json'";
-	$curl_cmd .= " -d '{\"username\":\"$username\",\"password\":\"$password\"}'";
-	$curl_cmd .= " $auth_url";
+	my ($json, $rc, $err) = read_json_from($self->curl(
+		{
+			method  => 'POST',
+			headers => {
+				'Content-Type' => 'application/json'
+			},
+			data => JSON::PP::encode(
+				{
+					username => $username,
+					password => $password,
+				}
+			)
+		},
+		"https://$url/v1/auth"
+	));
 
-	my ($token, $rc, $err) = run($curl_cmd);
 	bail("Failed to log into Doomsday: $err") if $rc;
-
-	# Parse and extract token
-	my $json;
-	eval { $json = JSON::PP::decode_json($token); };
-	bail("Failed to parse login response: $@") if $@;
 
 	my $jwt = $json->{token};
 	bail("No token found in login response") unless $jwt;
 
 	# Save token to environment
-	$ENV{DOOMSDAY_TOKEN} = $jwt;
+	mkfile_or_fail(
+		"$ENV{HOME}/.doomsday_token",
+		"export DOOMSDAY_TOKEN=\"$jwt\"\n"
+	)
 
-	info("\n#G{Successfully logged into Doomsday!}\n".
-	     "Token saved to DOOMSDAY_TOKEN environment variable.\n".
-	     "You can now use this token with the Doomsday API.\n");
+	info(
+		"\n#G{Successfully logged into Doomsday!}\n".
+		"\`source ~/.doomsday_token\` then you can use the doomsday cli.\n"
+	);
 
-  return $self->done();
+  return $self->done($jwt);
 }
 
 1;
