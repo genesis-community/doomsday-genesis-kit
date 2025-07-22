@@ -29,13 +29,12 @@ sub perform {
   my $password = $self->env->exodus_lookup('admin_password');
   bail("Doomsday password not found in exodus data") unless $password;
 
-  # Get BOSH information
-  my ($out, $rc, $err) = run({stderr => 0}, "bosh -A env --tty | sed -e 's/^/  /'");
+	my $out = $self->env->bosh(qw/env --tty/)
 
   # Display information
   info(
     "\n#B{Doomsday Information}\n\n".
-    "BOSH environment:\n%s\n\n".
+    "BOSH environment:%s\n\n".
     "Doomsday Web UI:\n".
     "\t#C{https://%s}\n\n".
     "Credentials:\n".
@@ -44,7 +43,7 @@ sub perform {
     "You can use the following addons:\n".
     "\t#G{%s do -- login} # Log into Doomsday\n".
     "\t#G{%s do -- open}  # Open Doomsday Web UI\n",
-    $out,
+    join("\n  ", '', split("\n", $out)),
     $doomsday_url,
     $username,
     $password,
