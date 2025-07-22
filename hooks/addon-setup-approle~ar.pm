@@ -121,7 +121,7 @@ sub _setup_doomsday_approle {
 	# Deleting first if exists
   ($out,$rc,$err) = $self->vault->query("vault","delete","auth/approle/role/$approle");
 
-  $value = $self->vault->set(
+  my $value = $self->vault->set(
     "auth/approle/role/$approle",
     "secret_id_ttl", "0",
     "token_num_uses", "0",
