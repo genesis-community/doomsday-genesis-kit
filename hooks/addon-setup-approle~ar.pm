@@ -49,7 +49,7 @@ sub perform {
   } elsif ($result =~ /(path is already in use)/) {
     info("#G{[ok - approle already enabled]}");
     info("Checking for existing roles...");
-doomsdays_output = $self->vault->query("ls","auth/approle/role","-1");
+    my $roles_output = $self->vault->query("ls","auth/approle/role","-1");
     @roles = split(/\n/, $roles_output);
     info("#G{[ok - " . scalar(@roles) . " role(s) found]}");
   } else {
@@ -80,7 +80,7 @@ sub _setup_doomsday_approle {
   info("Creating #C{doomsday} policy...");
   my $policy = "";
   $policy .= "# List, create, update, and delete key/value secrets for Doomsday\n";
-  my $capabilities = '" { capabilities = [ "read", "list" ] }';
+  my $capabilities = ' { capabilities = [ "read", "list" ] }';
 
   my $sec_info = $self->_match_mount($ENV{GENESIS_SECRETS_MOUNT});
   if (!$sec_info) {
@@ -94,17 +94,17 @@ sub _setup_doomsday_approle {
   }
   my ($exo_mnt, $exo_path, $exo_ver) = @$exo_info;
 
-	my $path =
+  my $mount_type = $sec_ver == 1 ? "kv_v1" : "kv_v2";
   if ($mount_type eq "kv_v1") {
-    $policy .= "path \"$sec_mnt/*$capabilities\n";
-    $policy .= "path \"$exo_mnt/*$capabilities\n";
+    $policy .= "path \"$sec_mnt/*\"$capabilities\n";
+    $policy .= "path \"$exo_mnt/*\"$capabilities\n";
   } else {
 		# Secrets
-    $policy .= "path \"${sec_mnt}/data/*$capabilities\n";
-    $policy .= "path \"${sec_mnt}/metadata/*$capabilities\n";
+    $policy .= "path \"${sec_mnt}/data/*\"$capabilities\n";
+    $policy .= "path \"${sec_mnt}/metadata/*\"$capabilities\n";
 		# Exodus
-    $policy .= "path \"${exo_mnt}/data/*$capabilities\n";
-    $policy .= "path \"${exo_mnt}/metadata/*$capabilities\n";
+    $policy .= "path \"${exo_mnt}/data/*\"$capabilities\n";
+    $policy .= "path \"${exo_mnt}/metadata/*\"$capabilities\n";
   }
 
 	info("#Y{Policy file being applied to Doomsday}\n\n%s\n\n", $policy);
@@ -147,6 +147,7 @@ sub _setup_doomsday_approle {
   my $approle_secret = $self->vault->query("vault","write","-field=secret_id","-f","auth/approle/role/$approle/secret-id");
 
   # Store credentials
+  my $doomsday_approle_path = "secret/genesis-pipelines/doomsday";
   $self->vault->set("${doomsday_approle_path}", "approle-id", "$role_id");
   $self->vault->set("${doomsday_approle_path}", "approle-secret", "$approle_secret");
 
@@ -154,6 +155,28 @@ sub _setup_doomsday_approle {
   info("#G{[DONE]} App role #C{$approle} created.");
 
   return 1;
+}
+
+sub _match_mount {
+  my ($self, $path) = @_;
+  
+  # For Genesis deployments, we typically use standard mounts
+  # The path structure is usually: <mount>/<deployment>/<key>
+  
+  # Extract the mount point from the path
+  my ($mount) = $path =~ m|^([^/]+)|;
+  return undef unless $mount;
+  
+  # Check if it's a v1 or v2 KV mount
+  # For now, assume v2 (which is the default for newer vaults)
+  # You can enhance this by actually querying vault for mount info
+  my $version = 2;
+  
+  # Extract the path within the mount
+  my $path_within_mount = $path;
+  $path_within_mount =~ s|^$mount/?||;
+  
+  return [$mount, $path_within_mount, $version];
 }
 
 1;
