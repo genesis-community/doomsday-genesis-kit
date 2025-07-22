@@ -43,10 +43,6 @@ sub perform {
 		bail("This addon only works on macOS and Linux");
 	}
 
-	# Check if command exists
-	my ($out, $rc) = run("command -v $open_cmd >/dev/null 2>&1");
-	bail("$open_cmd command not found") if $rc;
-
 	# Get credentials
 	my $username = $env->exodus_lookup('admin_username');
 	my $password = $env->exodus_lookup('admin_password');
@@ -62,8 +58,14 @@ sub perform {
     "Opening Doomsday Web UI at #C{https://$url} in your browser...\n"
   );
 
-	# Open browser
-	system("$open_cmd https://$url >/dev/null 2>&1");
+	# Check if command exists
+	my ($out, $rc) = run("command -v $open_cmd >/dev/null 2>&1");
+	if ($rc) {
+		info("$open_cmd command not found, skipping system opening.") if $rc;
+	} else {
+		info("Opening browser...");
+		system("$open_cmd https://$url >/dev/null 2>&1");
+	}
 
   return $self->done();
 }
