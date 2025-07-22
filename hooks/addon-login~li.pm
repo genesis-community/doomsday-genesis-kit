@@ -8,9 +8,9 @@ use warnings;
 BEGIN {push @INC, $ENV{GENESIS_LIB} ? $ENV{GENESIS_LIB} : $ENV{HOME}.'/.genesis/lib'}
 use parent qw(Genesis::Hook::Addon);
 
-use Genesis qw/bail info run/;
+use Genesis qw/bail info run curl read_json_from mkfile_or_fail/;
 use Genesis::UI qw/prompt_for_boolean/;
-use JSON::PP;
+use JSON::PP qw/encode_json/;
 
 sub init {
 	my $class = shift;
@@ -61,7 +61,7 @@ sub perform {
 			headers => {
 				'Content-Type' => 'application/json'
 			},
-			data => JSON::PP::encode(
+			data => encode_json(
 				{
 					username => $username,
 					password => $password,
