@@ -130,9 +130,9 @@ sub _process_ocfp_templates {
 # TODO: Change the external configured location to be more explicit, something like secret/config/vaults/X:{url,ca,namespace,role_id,secret_id}
 # NOTE: This is the current functionality, to be changed to new location that makes more sense
 # if meta.vault /vault:{url,ca,namespace,role_id,secret_id}
-		my $vault_path = $self->env->secrets_base;
-		if (   $self->env->vault->has("$vault_path/vault:url")
-			&& $self->env->vault->has("$vault_path/vault:role_id") )
+		my $vault_path = $self->env->secrets_base . "/vault";
+		if (   $self->env->vault->has("$vault_path:url")
+			&& $self->env->vault->has("$vault_path:approle_id") )
 		{
 			# External Configured Vault, rener the external vault template:
 			push @rendered_files,
