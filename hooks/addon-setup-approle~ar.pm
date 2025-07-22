@@ -70,7 +70,7 @@ sub _setup_doomsday_approle {
     info("#y{[WARNING]} App role #C{$approle} already exists. This action will overwrite it...");
     my $continue = "";
     prompt_for_boolean( "Continue?", 0);
-    return 0 if $continue ;
+    return 0 if !$continue;
   }
 
   info("Creating #C{doomsday} policy...");
@@ -110,18 +110,18 @@ sub _setup_doomsday_approle {
   print $fh $policy;
   close($fh);
 
-  my $rc = $self->vault->query("vault","policy","write","doomsday","/tmp/policy.hcl");
-	info("Output: %s", $rc);
-	bail("#R{[error]}\nFailed to save #C{doomsday} policy.") unless $rc =~ /Success/x;
+  my ($out,$rc,$err) = $self->vault->query("vault","policy","write","doomsday","/tmp/policy.hcl");
+	info("Output: %s", $out);
+	bail("#R{[error]}\nFailed to save #C{doomsday} policy:\n%s"$err//$out) unless $err//$out =~ /Success/x;
 
   info("#G{[ok]}");
   info("#wui{Policy for $approle}\n#K{$policy}\n");
 
-  # Create app role
   info("Creating and configuring app role #C{$approle}...");
-  $self->vault->query("vault","delete","auth/approle/role/$approle");
+	# Deleting first if exists
+  ($out,$rc,$err) = $self->vault->query("vault","delete","auth/approle/role/$approle");
 
-  $rc = $self->vault->set(
+  $value = $self->vault->set(
     "auth/approle/role/$approle",
     "secret_id_ttl", "0",
     "token_num_uses", "0",
@@ -131,10 +131,7 @@ sub _setup_doomsday_approle {
     "secret_id_num_uses", "0",
     "policies", "doomsday"
   );
-
-  if ($rc != 0) {
-    bail("#R{[error]}\nFailed to create #C{$approle} approle.");
-  }
+	bail("#R{[error]}\nFailed to create #C{$approle} approle.") unless ($value)
   info("#G{[ok]}");
 
   # Generate credentials
