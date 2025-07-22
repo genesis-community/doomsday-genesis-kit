@@ -34,7 +34,7 @@ sub perform {
   # Display information
   info(
     "\n#B{Doomsday Information}\n\n".
-    "BOSH environment:%s\n\n".
+    "BOSH environment:\n%s\n\n".
     "Doomsday Web UI:\n".
     "\t#C{%s}\n\n".
     "Credentials:\n".
