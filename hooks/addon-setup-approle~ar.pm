@@ -20,11 +20,9 @@ sub cmd_details {
   "\nCreate the necessary Vault AppRole and policy for Genesis Doomsday deployments.\n".
   "Unlike other addons, this can and should be run before deployment.\n".
   "\n".
-  "This will setup up the app roles and policies for doomsday and genesis-pipelines.\n".
-  "The doomsday app role will provide doomsday access to a vault location\n".
-  "(usually `/doomsday`) for interpolating secrets in pipelines. The genesis-pipelines\n".
-  "app role is used to allow the Genesis pipelines to access vault for reading\n".
-  "deployment secrets and writing exodus data.\n";
+  "This will setup up the app roles and policies for doomsday.\n".
+  "The doomsday app role will provide doomsday access to vault paths for reading\n".
+  "to check certificates.\n"
 }
 
 sub perform {
@@ -33,10 +31,8 @@ sub perform {
 
   info(
     "\nThis will setup up the app roles and policies for doomsday and".
-    "\ngenesis-pipelines. The doomsday app role will provide doomsday access to a".
-    "\nvault location (usually `/doomsday`) for interpolating secrets in pipelines.".
-    "\nThe genesis-pipelines app role is used to allow the Genesis pipelines to access".
-    "\nvault for reading deployment secrets and writing exodus data.\n"
+    "\ngenesis-pipelines. The doomsday app role will provide doomsday access to".
+    "\nvault paths to read and examine certificates.\n"
   );
 
   # Check if AppRole is enabled
@@ -147,7 +143,8 @@ sub _setup_doomsday_approle {
   my $approle_secret = $self->vault->query("vault","write","-field=secret_id","-f","auth/approle/role/$approle/secret-id");
 
   # Store credentials
-  my $doomsday_approle_path = "secret/genesis-pipelines/doomsday";
+	my $env_path = $self->env->secrets_mount;
+  my $doomsday_approle_path = "${env_path}doomsday";
   $self->vault->set("${doomsday_approle_path}", "approle-id", "$role_id");
   $self->vault->set("${doomsday_approle_path}", "approle-secret", "$approle_secret");
 
