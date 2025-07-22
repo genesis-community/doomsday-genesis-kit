@@ -131,7 +131,7 @@ sub _setup_doomsday_approle {
     "secret_id_num_uses", "0",
     "policies", "doomsday"
   );
-	bail("#R{[error]}\nFailed to create #C{$approle} approle.") unless ($value)
+	bail("#R{[error]}\nFailed to create #C{$approle} approle.") unless ($value);
   info("#G{[ok]}");
 
   # Generate credentials
