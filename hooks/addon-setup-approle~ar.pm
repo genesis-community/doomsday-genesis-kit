@@ -112,7 +112,7 @@ sub _setup_doomsday_approle {
 
   my ($out,$rc,$err) = $self->vault->query("vault","policy","write","doomsday","/tmp/policy.hcl");
 	info("Output: %s", $out);
-	bail("#R{[error]}\nFailed to save #C{doomsday} policy:\n%s"$err//$out) unless $err//$out =~ /Success/x;
+	bail("#R{[error]}\nFailed to save #C{doomsday} policy:\n%s", $err//$out) unless $err//$out =~ /Success/x;
 
   info("#G{[ok]}");
   info("#wui{Policy for $approle}\n#K{$policy}\n");
