@@ -143,7 +143,7 @@ sub _setup_doomsday_approle {
   my $approle_secret = $self->vault->query("vault","write","-field=secret_id","-f","auth/approle/role/$approle/secret-id");
 
   # Store credentials
-	my $env_path = $self->env->secrets_mount;
+	my $env_path = $self->env->secrets_base;
   my $doomsday_approle_path = "${env_path}doomsday";
   $self->vault->set("${doomsday_approle_path}", "approle-id", "$role_id");
   $self->vault->set("${doomsday_approle_path}", "approle-secret", "$approle_secret");
