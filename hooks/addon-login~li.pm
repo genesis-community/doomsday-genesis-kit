@@ -10,7 +10,7 @@ use parent qw(Genesis::Hook::Addon);
 
 use Genesis qw/bail info run curl read_json_from mkfile_or_fail/;
 use Genesis::UI qw/prompt_for_boolean/;
-use JSON::PP qw/encode_json/;
+use JSON::PP qw/encode_json decode_json/;
 
 sub init {
 	my $class = shift;
@@ -55,7 +55,7 @@ sub perform {
 		return $self->done(0) unless $continue;
 	}
 
-	my ($json, $rc, $err) = read_json_from(curl(
+	my ($status, $code, $data) = curl(
 		{
 			method  => 'POST',
 			headers => {
@@ -72,7 +72,10 @@ sub perform {
 		"$url/v1/auth"
 	));
 
-	bail("Failed to log into Doomsday: $err") if $rc;
+	bail("Failed to log into Doomsday:\n\n$data\n") if $status > 399;
+
+	my $json = eval { decode_json($data) };
+	bail("Failed to decode json token: $@\ndata:\n\n$data\n") if ($@);
 
 	my $jwt = $json->{token};
 	bail("No token found in login response") unless $jwt;
