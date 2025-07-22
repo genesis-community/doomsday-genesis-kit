@@ -68,7 +68,7 @@ sub perform {
 				}
 			)
 		},
-		"https://$url/v1/auth"
+		"$url/v1/auth"
 	));
 
 	bail("Failed to log into Doomsday: $err") if $rc;
