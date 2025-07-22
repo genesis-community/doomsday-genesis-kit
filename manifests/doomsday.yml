@@ -7,8 +7,6 @@ meta:
       - z1
 exodus:
   url: (( concat "https://" meta.doomsday.ip ))
-  username: (( grab meta.admin_username ))
-  password: (( grab meta.admin_password ))
 
 params:
   ca_validity_period:   10y

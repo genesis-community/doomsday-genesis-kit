@@ -48,8 +48,8 @@ sub perform {
 	bail("$open_cmd command not found") if $rc;
 
 	# Get credentials
-	my $username = $env->exodus_lookup('username');
-	my $password = $env->exodus_lookup('password');
+	my $username = $env->exodus_lookup('admin_username');
+	my $password = $env->exodus_lookup('admin_password');
 
 	bail("Could not retrieve Doomsday credentials from exodus data")
 		unless $username && $password;

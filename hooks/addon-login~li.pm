@@ -42,8 +42,8 @@ sub perform {
 
 	# Get Doomsday credentials
 	my $url = $env->exodus_lookup('url');
-	my $username = $env->exodus_lookup('username');
-	my $password = $env->exodus_lookup('password');
+	my $username = $env->exodus_lookup('admin_username');
+	my $password = $env->exodus_lookup('admin_password');
 
 	bail("Could not retrieve Doomsday URL or credentials from exodus data")
 		unless $url && $username && $password;
