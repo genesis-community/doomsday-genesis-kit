@@ -94,12 +94,17 @@ sub _setup_doomsday_approle {
     $policy .= "path \"$sec_mnt*\"$capabilities\n";
     $policy .= "path \"$exo_mnt*\"$capabilities\n";
   } else {
-		# Secrets
-    $policy .= "path \"${sec_mnt}data/*\"$capabilities\n";
-    $policy .= "path \"${sec_mnt}metadata/*\"$capabilities\n";
-		# Exodus
-    $policy .= "path \"${exo_mnt}data/*\"$capabilities\n";
-    $policy .= "path \"${exo_mnt}metadata/*\"$capabilities\n";
+		if ($sec_mnt eq $exo_mnt) {
+			$policy .= "path \"${sec_mnt}data/*\"$capabilities\n";
+			$policy .= "path \"${sec_mnt}metadata/*\"$capabilities\n";
+		} else {
+			# Secrets
+			$policy .= "path \"${sec_mnt}data/*\"$capabilities\n";
+			$policy .= "path \"${sec_mnt}metadata/*\"$capabilities\n";
+			# Exodus
+			$policy .= "path \"${exo_mnt}data/*\"$capabilities\n";
+			$policy .= "path \"${exo_mnt}metadata/*\"$capabilities\n";
+		}
   }
 
 	info("#Y{Policy file being applied to Doomsday}\n\n%s\n\n", $policy);
@@ -111,7 +116,7 @@ sub _setup_doomsday_approle {
 
   my ($out,$rc,$err) = $self->vault->query("vault","policy","write","doomsday","/tmp/policy.hcl");
 	info("Output: %s", $out);
-	bail("#R{[error]}\nFailed to save #C{doomsday} policy:\n%s", $err//$out) unless $err//$out =~ /Success/x;
+	bail("#R{[error]}\nFailed to save #C{doomsday} policy:\n%s", $out) unless $out =~ /Success/x;
 
   info("#G{[ok]}");
   info("#wui{Policy for $approle}\n#K{$policy}\n");
@@ -130,7 +135,7 @@ sub _setup_doomsday_approle {
     "secret_id_num_uses", "0",
     "policies", "doomsday"
   );
-	bail("#R{[error]}\nFailed to create #C{$approle} approle.") unless ($value);
+	bail("#R{[error]}\nFailed to create #C{$approle} approle.") unless ($value eq 0);
   info("#G{[ok]}");
 
   # Generate credentials
