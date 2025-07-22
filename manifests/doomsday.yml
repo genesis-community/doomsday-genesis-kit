@@ -8,7 +8,7 @@ meta:
 exodus:
   url: (( concat "https://" meta.doomsday.ip ))
   username: admin
-  password: (( vault meta.vault "users/admin:password" ))
+  password: (( vault meta.vault "/users/admin:password" ))
 
 params:
   ca_validity_period:   10y
