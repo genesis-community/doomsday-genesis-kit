@@ -68,9 +68,8 @@ sub _setup_doomsday_approle {
   # Check if role already exists
   if (grep { $_ eq $approle } @$roles_ref) {
     info("#y{[WARNING]} App role #C{$approle} already exists. This action will overwrite it...");
-    my $continue = "";
-    prompt_for_boolean( "Continue?", 0);
-    return 0 if !$continue;
+    my $continue = prompt_for_boolean( "Continue?", 0);
+    return 0 unless $continue;
   }
 
   info("Creating #C{doomsday} policy...");
