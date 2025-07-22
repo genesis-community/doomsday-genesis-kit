@@ -12,7 +12,7 @@ use Genesis qw/info bail run/;
 sub init {
   my $class = shift;
   my $obj = $class->SUPER::init(@_);
-  $obj->check_minimum_genesis_version('3.1.0-rc.20');
+  $obj->check_minimum_genesis_version('3.1.0');
   return $obj;
 }
 
@@ -23,10 +23,10 @@ sub perform {
   my $doomsday_url = $self->env->exodus_lookup('url');
   bail("Doomsday URL not found in exodus data") unless $doomsday_url;
 
-  my $username = $self->env->exodus_lookup('username');
+  my $username = $self->env->exodus_lookup('admin_username');
   bail("Doomsday username not found in exodus data") unless $username;
 
-  my $password = $self->env->exodus_lookup('password');
+  my $password = $self->env->exodus_lookup('admin_password');
   bail("Doomsday password not found in exodus data") unless $password;
 
   # Get BOSH information

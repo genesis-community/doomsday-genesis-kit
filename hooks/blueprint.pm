@@ -16,7 +16,7 @@ my $_virtual_features = { map { ( $_, 1 ) } qw(ocfp sharded-vault-paths) };
 sub init {
 	my $class = shift;
 	my $obj   = $class->SUPER::init(@_);
-	$obj->check_minimum_genesis_version('3.1.0-rc.20');
+	$obj->check_minimum_genesis_version('3.1.0');
 	$obj->{vault_deps} = [];
 	return $obj;
 }
