@@ -70,7 +70,7 @@ sub perform {
 			)
 		},
 		"$url/v1/auth"
-	));
+	);
 
 	bail("Failed to log into Doomsday:\n\n$data\n") if $status > 399;
 
