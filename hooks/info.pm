@@ -36,7 +36,7 @@ sub perform {
     "\n#B{Doomsday Information}\n\n".
     "BOSH environment:%s\n\n".
     "Doomsday Web UI:\n".
-    "\t#C{https://%s}\n\n".
+    "\t#C{%s}\n\n".
     "Credentials:\n".
     "\tusername: #M{%s}\n".
     "\tpassword: #G{%s}\n\n".
