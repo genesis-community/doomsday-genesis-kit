@@ -29,7 +29,7 @@ sub perform {
   my $password = $self->env->exodus_lookup('admin_password');
   bail("Doomsday password not found in exodus data") unless $password;
 
-	my $out = $self->env->bosh(qw/env --tty/);
+	my $out = $self->env->bosh->execute(qw/env --tty/);
 
   # Display information
   info(
