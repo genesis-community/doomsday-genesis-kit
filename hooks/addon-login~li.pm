@@ -61,6 +61,7 @@ sub perform {
 			headers => {
 				'Content-Type' => 'application/json'
 			},
+			skip_verify => 1,
 			data => encode_json(
 				{
 					username => $username,
