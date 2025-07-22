@@ -2,8 +2,13 @@
 meta:
   doomsday:
     network: (( grab params.network || "default" )) # Used by dns for tls cert
+    ip: (( static_ips 0 ))
     azs:
       - z1
+exodus:
+  url: (( concat "https://" meta.doomsday.ip ))
+  username: admin
+  password: (( vault meta.vault "users/admin:password" ))
 
 params:
   ca_validity_period:   10y
