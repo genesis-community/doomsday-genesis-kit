@@ -55,7 +55,7 @@ sub perform {
     "\nDoomsday Web UI Credentials:\n".
     "\tusername: #M{$username}\n".
     "\tpassword: #G{$password}\n\n".
-    "Opening Doomsday Web UI at #C{https://$url} in your browser...\n"
+    "Opening Doomsday Web UI at #C{$url} in your browser...\n"
   );
 
 	# Check if command exists
@@ -64,7 +64,7 @@ sub perform {
 		info("$open_cmd command not found, skipping system opening.") if $rc;
 	} else {
 		info("Opening browser...");
-		system("$open_cmd https://$url >/dev/null 2>&1");
+		system("$open_cmd $url >/dev/null 2>&1");
 	}
 
   return $self->done();

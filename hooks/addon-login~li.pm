@@ -50,7 +50,7 @@ sub perform {
 
 	# Confirm before proceeding
 	unless ($non_interactive) {
-		info("\nAbout to log into Doomsday at #C{https://$url} as #M{$username}.\n");
+		info("\nAbout to log into Doomsday at #C{$url} as #M{$username}.\n");
 		my $continue = prompt_for_boolean("Proceed? [y|n]", 1);
 		return $self->done(0) unless $continue;
 	}
