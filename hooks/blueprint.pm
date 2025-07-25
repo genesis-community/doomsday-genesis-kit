@@ -111,15 +111,15 @@ sub _process_ocfp_templates {
 
 	# Get management environment and OCF environments from BOSH deployments
 	my $mgmt_env = $self->env->name;
-	my @ocf_envs = $self->_get_ocf_environments();
+	my @ocfp_envs = $self->_get_ocfp_environments();  # Should get all envs
+
+	# Render templates for this environment
+	my @rendered_files = ();
 
 	# Process templates for each environment
-	for my $env_name ( $mgmt_env, @ocf_envs ) {
+	for my $env_name ( $mgmt_env ) {
 		my $env_path     = $env_name =~ s/-/\//gr;
 		my $vault_prefix = $self->env->secrets_mount;
-
-		# Render templates for this environment
-		my @rendered_files = ();
 
 		# Vault Deployments
 		for my $vault_env ( $self->{vault_deps}->@* ) {
@@ -134,11 +134,15 @@ sub _process_ocfp_templates {
 		if (   $self->env->vault->has("$vault_path:url")
 			&& $self->env->vault->has("$vault_path:approle_id") )
 		{
-			# External Configured Vault, rener the external vault template:
+			# External Configured Vault, render the external vault template:
 			push @rendered_files,
 			  $self->_render_ocfp_template( 'vault-ext', $env_name, $env_path, $vault_prefix );
 		}
+	};
 
+	for my $env_name ( $mgmt_env, @ocfp_envs ) { # check both MGMT and OCF
+		my $env_path     = $env_name =~ s/-/\//gr;
+		my $vault_prefix = $self->env->secrets_mount;
 		# Render credhub template
 		push @rendered_files,
 		  $self->_render_ocfp_template( 'credhub', $env_name, $env_path, $vault_prefix );
@@ -148,15 +152,16 @@ sub _process_ocfp_templates {
 
 		push @rendered_files, $fqdns_file if $fqdns_file;
 
-		# Add all rendered files to the blueprint
-		$self->add_files(@rendered_files);
 	}
+	# Add all rendered files to the blueprint
+	$self->add_files(@rendered_files);
+
 	return;
 }
 
-sub _get_ocf_environments {
+sub _get_ocfp_environments {
 	my ($self) = @_;
-	my @ocf_envs = ();
+	my @ocfp_envs = ();
 
 	# Get BOSH handle from environment
 	eval {
@@ -176,7 +181,7 @@ sub _get_ocf_environments {
 
 				if ( $name =~ /^(.+)-bosh$/ ) {
 					info("OCFP:   -> adding OCF environment '%s'", $1);
-					push @ocf_envs, $1;
+					push @ocfp_envs, $1;
 				}
 				elsif ( $name =~ /^(.+)-vault$/ ) {
 					info("OCFP:   -> adding Vault dependency '%s'", $1);
@@ -190,7 +195,7 @@ sub _get_ocf_environments {
 		info("Only monitoring the current management environment");
 	}
 
-	return @ocf_envs;
+	return @ocfp_envs;
 }
 
 sub _render_ocfp_template {
@@ -233,7 +238,8 @@ sub _render_fqdns_template {
 	my $vault = $self->env->vault;
 
 	for my $env_type ( 'ocf', 'mgmt' ) {
-		my $path = "tf/${env_path}/${env_type}/fqdns";
+		my $path = "config/${env_path}/${env_type}/fqdns";
+		#secret/config/scf-stackit-eu01-004-cpi/mgmt/fqdns
 
 		# Check if path exists first
 		if ( $vault->has($path) ) {
