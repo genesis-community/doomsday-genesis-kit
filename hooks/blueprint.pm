@@ -161,25 +161,26 @@ sub _get_ocf_environments {
 	# Get BOSH handle from environment
 	eval {
 		my $bosh = $self->env->bosh;
-
 		# Execute bosh deployments command
 		my ( $out, $rc, $err ) = $bosh->execute( 'deployments', '--json' );
 
 		if ( $rc == 0 && $out ) {
-
-			# Parse JSON output to extract OCF environment names
 			require JSON;
-			my $data = JSON::decode_json($out);
+			my $json = JSON::decode_json($out);
 
-			# BOSH deployments --json returns an array of deployment objects
-			if ( $data && ref($data) eq 'ARRAY' ) {
-				for my $deployment (@$data) {
-					if ( $deployment->{name} && $deployment->{name} =~ /^(.+)-bosh$/ ) {
-						push @ocf_envs, $1;
-					}
-					elsif ( $deployment->{name} && $deployment->{name} =~ /^(.+)-vault$/ ) {
-						push $self->{vault_deps}->@*, $1;    # postfix dereference yo!
-					}
+			# We know bosh --json wraps deployments under Tables->[0].Rows
+			my $rows = $json->{Tables}[0]{Rows} || [];
+
+			for my $deployment (@$rows) {
+				my $name = $deployment->{name} // '<undef>';
+
+				if ( $name =~ /^(.+)-bosh$/ ) {
+					info("OCFP:   -> adding OCF environment '%s'", $1);
+					push @ocf_envs, $1;
+				}
+				elsif ( $name =~ /^(.+)-vault$/ ) {
+					info("OCFP:   -> adding Vault dependency '%s'", $1);
+					push $self->{vault_deps}->@*, $1;
 				}
 			}
 		}
