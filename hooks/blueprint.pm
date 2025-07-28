@@ -121,22 +121,21 @@ sub _process_ocfp_templates {
 		my $env_path     = $env_name =~ s/-/\//gr;
 		my $vault_prefix = $self->env->secrets_mount;
 
-		# Vault Deployments
-		for my $vault_env ( $self->{vault_deps}->@* ) {
-			push @rendered_files,
-			  $self->_render_ocfp_template( 'vault', $vault_env, $env_path, $vault_prefix );
-		}
-
-# TODO: Change the external configured location to be more explicit, something like secret/config/vaults/X:{url,ca,namespace,role_id,secret_id}
-# NOTE: This is the current functionality, to be changed to new location that makes more sense
-# if meta.vault /vault:{url,ca,namespace,role_id,secret_id}
-		my $vault_path = $self->env->secrets_base . "/vault";
-		if (   $self->env->vault->has("$vault_path:url")
-			&& $self->env->vault->has("$vault_path:approle_id") )
-		{
-			# External Configured Vault, render the external vault template:
-			push @rendered_files,
-			  $self->_render_ocfp_template( 'vault-ext', $env_name, $env_path, $vault_prefix );
+		# If Vault deployments exist, render vault templates
+		if (@{$self->{vault_deps}}) {
+			for my $vault_env ( $self->{vault_deps}->@* ) {
+				push @rendered_files,
+				  $self->_render_ocfp_template( 'vault', $vault_env, $env_path, $vault_prefix );
+			}
+		} else {
+			# Otherwise, check for external vault configuration
+			my $vault_path = $self->env->secrets_base . "/vault";
+			if (   $self->env->vault->has("$vault_path:url")
+			    && $self->env->vault->has("$vault_path:approle_id") ) {
+				info("OCFP:   -> using externally configured Vault from $vault_path");
+				push @rendered_files,
+				  $self->_render_ocfp_template( 'vault-ext', $env_name, $env_path, $vault_prefix );
+			}
 		}
 	};
 

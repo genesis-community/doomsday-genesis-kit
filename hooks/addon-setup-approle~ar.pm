@@ -152,7 +152,34 @@ info("#G{[ok]}");
   info("#G{[ok]} Access credentials written to #M{$doomsday_approle_path}");
   info("#G{[DONE]} App role #C{$approle} created.");
 
+  # Read the exodus path vault data
+  my $default_port = $ENV{DOOMSDAY_VAULT_PORT} || "443";
+  my $env_name = $self->env->name;
+  my $exo_data_path = "${exo_mnt}exodus/${env_name}/vault";
+  info("Reading exodus vault data from $exo_data_path...");
+  my $exo_values = $self->vault->get($exo_data_path);
+
+  unless ($exo_values && ref($exo_values) eq 'HASH') {
+    bail("#R{[error]}\nFailed to read exodus vault data from $exo_data_path");
+  }
+
+  # Patch URL if needed
+  if ($exo_values->{url} && $exo_values->{url} !~ /:\d+$/) {
+    info("Patching Vault URL to include port $default_port...");
+    $exo_values->{url} .= ":$default_port";
+  }
+
+  # Write to the new destination path
+  my $target_path = "${env_path}vault";
+  info("Replicating Vault values from $exo_data_path to $target_path...");
+  foreach my $key (keys %$exo_values) {
+    $self->vault->set($target_path, $key, $exo_values->{$key});
+  }
+
+  info("#G{[ok]} Vault values replicated to #M{$target_path} with patched URL");
+
   return 1;
+
 }
 
 sub _match_mount {
