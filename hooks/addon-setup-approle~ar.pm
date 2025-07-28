@@ -125,18 +125,18 @@ sub _setup_doomsday_approle {
 	# Deleting first if exists
   ($out,$rc,$err) = $self->vault->query("vault","delete","auth/approle/role/$approle");
 
-  my $value = $self->vault->set(
-    "auth/approle/role/$approle",
-    "secret_id_ttl", "0",
-    "token_num_uses", "0",
-    "token_period", "3600",
-    "token_ttl", "3600",
-    "token_max_ttl", "0",
-    "secret_id_num_uses", "0",
-    "policies", "doomsday"
-  );
-	bail("#R{[error]}\nFailed to create #C{$approle} approle.") unless ($value eq 0);
-  info("#G{[ok]}");
+  my $value = $self->vault->query(
+  "vault", "write", "auth/approle/role/$approle",
+  "secret_id_ttl=0",
+  "token_num_uses=0",
+  "token_period=3600",
+  "token_ttl=3600",
+  "token_max_ttl=0",
+  "secret_id_num_uses=0",
+  "policies=doomsday"
+);
+bail("#R{[error]}\nFailed to create or update #C{$approle} approle:\n$out") unless ($out =~ /Success/);
+info("#G{[ok]}");
 
   # Generate credentials
   info("Generating and storing authentication credentials...");
