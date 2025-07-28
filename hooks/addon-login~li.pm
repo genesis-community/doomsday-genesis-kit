@@ -11,6 +11,8 @@ use parent qw(Genesis::Hook::Addon);
 use Genesis qw/bail info run curl read_json_from mkfile_or_fail/;
 use Genesis::UI qw/prompt_for_boolean/;
 use JSON::PP qw/encode_json decode_json/;
+use YAML qw(Load LoadFile Dump);
+
 
 sub init {
 	my $class = shift;
@@ -87,11 +89,31 @@ sub perform {
 	);
 
 	info(
-		"\n#G{Successfully logged into Doomsday!}\n".
-		"\`source ~/.doomsday_token\` then you can use the doomsday cli.\n"
+		"\n#G{Successfully logged into and targeted Doomsday!}\n".
+		"Your token has been saved to #C{~/.doomsday_token}.\n".
+		"And the targeted Doomsday instance is saved in #C{~/.dday} config.\n"
 	);
 
-  return $self->done($jwt);
+	# Also update ~/.dday config for CLI convenience, without extra dependencies
+	my $dday_path = "$ENV{HOME}/.dday";
+
+	my $dday_cfg = {
+		current => $env->name,
+		targets => [
+			{
+				name        => $env->name,
+				address     => $url,
+				token       => $jwt,
+				skip_verify => $validate_ssl ? 'false' : 'true'
+			}
+		]
+	};
+
+	open(my $out, '>', $dday_path) or bail("Unable to write to $dday_path: $!");
+	print $out Dump($dday_cfg);  # includes '---'
+	close($out);
+
+	return $self->done($jwt);
 }
 
 1;
