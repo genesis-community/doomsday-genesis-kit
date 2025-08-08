@@ -1,5 +1,5 @@
 releases:
-- name: doomsday
-  version: 0.9.6
-  url: https://github.com/RubidiumStudios/doomsday-boshrelease/releases/download/v0.9.6/doomsday-0.9.6.tgz
-  sha1: af09580cf84c862d71e56330798c469c4bba631d
+- name:    doomsday
+  version: 0.9.7
+  url:     https://github.com/RubidiumStudios/doomsday-boshrelease/releases/download/v0.9.7/doomsday-0.9.7.tgz
+  sha1:    d893fc9acc4c7b433fd551ca2fa13462cf1d8666
