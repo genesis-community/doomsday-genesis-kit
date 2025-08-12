@@ -91,9 +91,9 @@ for my $r (@{$data->{releases} || []}) {
 			};
 		}
 	} else {
-		print "\e[31m[!!]\e[0m $r->{name} (v$r->{version}) sha1 checkums are INCORRECT.\n";
-		print "         the kit has '$r->{sha1}' (wrong)\n";
-		print "        actually got '$sha1' (correct)\n\n";
+		print "[!!] $r->{name} (v$r->{version}) sha1 checkums are INCORRECT.\n";
+		print "[!!]     the kit has '$r->{sha1}' (wrong)\n";
+		print "[!!]    actually got '$sha1' (correct)\n";
 		$rc = 1;
 	}
 }
