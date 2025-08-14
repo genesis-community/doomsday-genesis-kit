@@ -42,7 +42,7 @@ sub perform {
 							'security_groups' => $self->network_reference('sgs', 'get_sgs_by_names', 'ocfp', 'default'),
 						},
 						aws => {
-							'subnet' => $self->network_reference('id'),
+							'subnet' => $self->subnet_reference('id'),
 						},
 					},
 				},
@@ -74,7 +74,7 @@ sub perform {
 					aws => {
 						'instance_type' => $self->for_scale({
 							dev => 't3.medium',
-							prod => 'm6i.xlarge'
+							prod => 'm6i.large'
 						}, 't3.medium'),
 						'ephemeral_disk' => {
 							'encrypted' => $self->TRUE,
@@ -118,7 +118,7 @@ sub perform {
 			$self->vm_extension_definition('doomsday-lb' => {
 					aws => {
 						'lb_target_groups' => [
-							'doomsday-lb',
+							'ocfp-mgmt-doomsday-lb-tg',
 						],
 					},
 				},

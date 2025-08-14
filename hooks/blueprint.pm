@@ -169,8 +169,8 @@ sub _get_ocf_environments {
 		my ( $out, $rc, $err ) = $bosh->execute( 'deployments', '--json' );
 
 		if ( $rc == 0 && $out ) {
-			require JSON;
-			my $json = JSON::decode_json($out);
+			require JSON::PP;
+			my $json = JSON::PP::decode_json($out);
 
 			# We know bosh --json wraps deployments under Tables->[0].Rows
 			my $rows = $json->{Tables}[0]{Rows} || [];
