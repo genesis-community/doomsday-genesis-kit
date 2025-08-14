@@ -121,7 +121,11 @@ sub _process_ocfp_templates {
 		# Render templates for this environment
 		my @rendered_files = ();
 
-		# Vault Deployments
+		# Vault monitoring for this environment (matching original bash behavior)
+		push @rendered_files,
+		  $self->_render_ocfp_template( 'vault', $env_name, $env_path, $vault_prefix );
+
+		# Additional vault deployments found via BOSH
 		for my $vault_env ( $self->{vault_deps}->@* ) {
 			push @rendered_files,
 			  $self->_render_ocfp_template( 'vault', $vault_env, $env_path, $vault_prefix );
