@@ -203,7 +203,10 @@ sub _render_ocfp_template {
 	my $srcdir = 'ocfp/templates';
 	my $dstdir = 'dynamic';
 	my $src    = "$srcdir/${template_name}.yml";
-	my $dst    = "$dstdir/${env_name}-${template_name}.yml";
+	# Match bash naming convention for fqdns files
+	my $dst    = $template_name eq 'fqdns'
+		? "$dstdir/${env_name}-bosh-fqdns.yml"
+		: "$dstdir/${env_name}-${template_name}.yml";
 
 	# Ensure dynamic directory exists in kit's working directory
 	my $kit_dynamic_dir = $self->kit->path($dstdir);
@@ -236,8 +239,12 @@ sub _render_fqdns_template {
 	my @fqdns = ();
 	my $vault = $self->env->vault;
 
+	# Get the OCFP config mount path
+	my $config_mount = $self->env->ocfp_config_mount;
+
 	for my $env_type ( 'ocf', 'mgmt' ) {
-		my $path = "tf/${env_path}/${env_type}/fqdns";
+		# Use the ocfp_config_mount for the path construction
+		my $path = "${config_mount}${env_path}/${env_type}/fqdns";
 
 		# Check if path exists first
 		if ( $vault->has($path) ) {
