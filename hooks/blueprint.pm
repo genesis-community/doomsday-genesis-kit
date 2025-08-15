@@ -192,7 +192,7 @@ sub ocfp_vault_path {
 	my ($self, $env_name, $sub_path) = @_;
 	my $vault_prefix = $self->{vault_prefixes}{$env_name} // $self->env->secrets_mount;
 	my $ocfp_env_name = $env_name =~ s/-(mgmt|ocf)$//r;
-	return "$vault_prefix/$ocfp_env_name/$sub_path";
+	return "$vault_prefix/config/$ocfp_env_name/$sub_path";
 }
 
 sub exodus_vault_path {
@@ -286,7 +286,7 @@ sub _create_vault_ext_content {
 						name => "${env_name}-vault",
 						refresh_interval => 60,
 						properties => {
-							base_path => "${vault_prefix}${env_path}",
+							base_path => "${vault_prefix}/${env_path}",
 							address => "(( vault meta.vault \"/vault:url\" ))",
 							ca_certs => "(( vault meta.vault \"/vault:ca\" ))",
 							namespace => "(( vault meta.vault \"/vault:namespace\" ))",
@@ -310,7 +310,7 @@ sub _create_fqdns_content {
 		push @fqdns, values %$fqdn_data;
 	}
 
-	return unless @fqdns;
+	return undef unless @fqdns;
 
 	return {
 		instance_groups => [{
@@ -324,7 +324,7 @@ sub _create_fqdns_content {
 						name => "${env_name}-fqdns",
 						properties => {
 							timeout => 20,
-							hosts => @fqdns
+							hosts => \@fqdns
 		}}]}}]}]
 	};
 }
