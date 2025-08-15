@@ -115,18 +115,18 @@ sub _process_ocfp_templates {
 	for my $env_name ($self->{bosh_envs}->@*) {
 		my $vault_prefix = $self->{vault_prefixes}{$env_name} // $self->env->secrets_mount;
 
-		$self->_add_dynamic_credhub_config($env_name);
-		$self->_add_dynamic_fqdns_config($env_name);
+		$self->add_dynamic_credhub_config($env_name);
+		$self->add_dynamic_fqdns_config($env_name);
 	}
 
 	# BOSH-deployed Vault envs
 	for my $env_name (@{$self->{vault_envs} // []}) {
-		$self->_add_dynamic_credhub_config($env_name)
+		$self->add_dynamic_credhub_config($env_name)
 	}
 
 	# External Vault envs
 	for my $env_name (keys %{$self->{vault_prefixes}//{}}) {
-		$self->_add_dynamic_external_vault_config($env_name);
+		$self->add_dynamic_external_vault_config($env_name);
 	}
 	return;
 }
