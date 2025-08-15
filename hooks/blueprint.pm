@@ -7,292 +7,378 @@ use warnings;    # Genesis min perl version is 5.20
 BEGIN { push @INC, $ENV{GENESIS_LIB} ? $ENV{GENESIS_LIB} : $ENV{HOME} . '/.genesis/lib' }
 use parent qw(Genesis::Hook::Blueprint);
 
-use Genesis qw/bail info warning error in_array mkdir_or_fail/;
-
-my $_addon_features = { map { ( $_, 1 ) } qw(tls lb userpass) };
-
-my $_virtual_features = { map { ( $_, 1 ) } qw(ocfp sharded-vault-paths) };
+use Genesis qw/bail info warning error in_array mkdir_or_fail save_to_yaml_file/;
 
 sub init {
 	my $class = shift;
-	my $obj   = $class->SUPER::init(@_);
+	my $obj = $class->SUPER::init(@_);
 	$obj->check_minimum_genesis_version('3.1.0');
-	$obj->{vault_deps} = [];
+
+	# Initialize OCFP processing state
+	$obj->{ops_dir} = $ENV{PREVIOUS_ENV}
+		? ".genesis/cached/$ENV{PREVIOUS_ENV}/ops"
+		: "ops";
+
+	# Automatically detect explicit vault prefixes (replaces sharded-vault feature)
+	$obj->{vault_prefixes} = $obj->env->vault->get($obj->env->secrets_base . 'vault/prefixes') // {};
+	$obj->_assess_child_environments();
+
 	return $obj;
 }
 
 sub perform {
-	my ($blueprint) = @_;    # $blueprint is '$self'
+	my ($self) = @_;
 
-	$blueprint->add_files(
-		qw(
-		  manifests/doomsday.yml
-		  manifests/releases/doomsday.yml
-		)
+	# Add the base files
+	$self->add_files(qw(
+		manifests/doomsday.yml
+		manifests/releases/doomsday.yml
+	));
+
+	if ($self->want_feature('ocfp')) {
+		$self->validate_ocfp_features();
+		return $self->process_ocfp_features();
+	} else {
+		$self->validate_classic_features();
+		return $self->process_classic_features();
+	}
+}
+
+sub validate_ocfp_features {
+	my ($self) = @_;
+
+	$self->validate_features(
+		valid_features => [qw(
+			ocfp tls lb userpass sharded-vault-paths
+		)]
 	);
+}
 
-	# Features pre-check and validation
-	my ( @features, $abort, $warn ) = ();
-	for my $feature ( $blueprint->features ) {
-		if ( in_array( $feature, qw(ocfp sharded-vault-paths) ) ) {
 
-			# Virtual features that don't directly add files
-			push @features, $feature;
-		}
-		elsif ( in_array( $feature, qw(tls lb userpass) ) ) {
+sub validate_classic_features {
+	my ($self) = @_;
 
-			# Standard addon features
-			push @features, $feature;
-		}
-		elsif ( $feature =~ /^\+/ ) {
+	$self->validate_features(
+		valid_features => [qw(
+			tls lb userpass sharded-vault-paths
+		)]
+	);
+}
 
-			# Virtual feature dynamically created based on other features/params
-			push @features, $feature;
-		}
-		elsif ( -f $blueprint->env->path("ops/${feature}.yml") ) {
+sub process_classic_features {
+	my ($self) = @_;
 
-			# Custom ops files from environment
-			push @features, $feature;
-		}
-		else {
-			$abort = 1;
-			error(
-				"The #c{%s} feature is invalid. Valid features are: ocfp, " .
-				  "sharded-vault-paths, tls, lb, userpass, or a custom ops file in your " .
-				  "environment's ops/ directory.",
-				$feature
-			);
-		}
-	}
+	# Process addon features
+	$self->add_files_if_wants('tls', 'manifests/addons/tls.yml');
+	$self->add_files_if_wants('lb', 'manifests/addons/lb.yml');
+	$self->add_files_if_wants('userpass', 'manifests/addons/userpass.yml');
 
-	bail(
-		"#R{Cannot continue} - fix your #C{%s} file to resolve these issues.",
-		$blueprint->relative_env_path,
-	) if $abort;
+	# Process ops files
+	$self->_process_ops_files();
 
-	info( "Update your #C{%s} file to remove these warnings.\n", $blueprint->relative_env_path )
-	  if $warn;
+	return $self->done();
+}
 
-	# Replace given features with the curated list
-	$blueprint->set_features(@features);
+sub process_ocfp_features {
+	my ($self) = @_;
 
-	# Process features and add corresponding files
-	for my $feature ( $blueprint->features ) {
-		if ( addon_feature($feature) ) {
-			$blueprint->add_files("manifests/addons/${feature}.yml");
-		}
-		elsif ( virtual_feature($feature) ) {
+	# Process addon features (same as classic - these work with OCFP)
+	$self->add_files_if_wants('tls', 'manifests/addons/tls.yml');
+	$self->add_files_if_wants('lb', 'manifests/addons/lb.yml');
+	$self->add_files_if_wants('userpass', 'manifests/addons/userpass.yml');
 
-			# Virtual features - handled separately
-		}
-		elsif ( -f $blueprint->env->path("ops/${feature}.yml") ) {
+	# OCFP-specific processing
+	$self->add_files('ocfp/ocfp.yml');
+	$self->_process_ocfp_templates();
+	$self->_process_ops_files();
 
-			# Custom ops files - already validated above
-		}
-		else {
-			# This shouldn't happen due to validation above
-			$blueprint->kit->kit_bug( "Feature '%s' passed validation but has no handler",
-				$feature );
-		}
-	}
+	return $self->done();
+}
 
-	# Handle OCFP feature
-	if ( $blueprint->want_feature('ocfp') ) {
-		$blueprint->add_files(qw( ocfp/ocfp.yml));
-		$blueprint->_process_ocfp_templates();
-	}
+sub _process_ops_files {
+	my ($self) = @_;
 
-	return $blueprint->done();
+	$self->add_files_if_exists(
+		map {$self->env->path("$self->{ops_dir}/${_}.yml")} $self->features
+	);
 }
 
 # OCFP Template Processing Methods {{{
 sub _process_ocfp_templates {
 	my ($self) = @_;
 
-	# Get management environment and OCF environments from BOSH deployments
-	my $mgmt_env = $self->env->name;
-	my @ocf_envs = $self->_get_ocf_environments();
+	# Ensure dynamic directory exists
+	my $dynamic_dir = $self->kit->path('dynamic');
+	mkdir_or_fail($dynamic_dir) unless -d $dynamic_dir;
 
-	# Process templates for each environment
-	for my $env_name ( $mgmt_env, @ocf_envs ) {
-		my $env_path     = $env_name =~ s/-/\//gr;
-		my $vault_prefix = $self->env->secrets_mount;
+	# Process BOSH director envs (Credhub, FQDNs)
+	for my $env_name ($self->bosh_envs->@*) {
+		my $vault_prefix = $self->{vault_prefixes}{$env_name} // $self->env->secrets_mount;
 
-		# Render templates for this environment
-		my @rendered_files = ();
+		$self->_add_dynamic_credhub_config($env_name);
+		$self->_add_dynamic_fqdns_config($env_name);
+	}
 
-		# Vault monitoring for this environment (matching original bash behavior)
-		push @rendered_files,
-		  $self->_render_ocfp_template( 'vault', $env_name, $env_path, $vault_prefix );
+	# BOSH-deployed Vault envs
+	for my $env_name (@{$self->vault_envs // []}) {
+		$self->_add_dynamic_credhub_config($env_name)
+	}
 
-		# Additional vault deployments found via BOSH
-		for my $vault_env ( $self->{vault_deps}->@* ) {
-			push @rendered_files,
-			  $self->_render_ocfp_template( 'vault', $vault_env, $env_path, $vault_prefix );
-		}
-
-# TODO: Change the external configured location to be more explicit, something like secret/config/vaults/X:{url,ca,namespace,role_id,secret_id}
-# NOTE: This is the current functionality, to be changed to new location that makes more sense
-# if meta.vault /vault:{url,ca,namespace,role_id,secret_id}
-		my $vault_path = $self->env->secrets_base . "/vault";
-		if (   $self->env->vault->has("$vault_path:url")
-			&& $self->env->vault->has("$vault_path:approle_id") )
-		{
-			# External Configured Vault, rener the external vault template:
-			push @rendered_files,
-			  $self->_render_ocfp_template( 'vault-ext', $env_name, $env_path, $vault_prefix );
-		}
-
-		# Render credhub template
-		push @rendered_files,
-		  $self->_render_ocfp_template( 'credhub', $env_name, $env_path, $vault_prefix );
-
-		# Render FQDNs template if FQDNs exist
-		my $fqdns_file = $self->_render_fqdns_template( $env_name, $env_path, $vault_prefix );
-
-		push @rendered_files, $fqdns_file if $fqdns_file;
-
-		# Add all rendered files to the blueprint
-		$self->add_files(@rendered_files);
+	# External Vault envs
+	for my $env_name (keys %{$self->{vault_prefixes}//{}}) {
+		$self->_add_dynamic_external_vault_config($env_name);
 	}
 	return;
 }
 
-sub _get_ocf_environments {
+sub _assess_child_environments {
 	my ($self) = @_;
 	my @ocf_envs = ();
 
+	$self->env->notify('assessing deployed environments...');
+	push @{$self->{bosh_envs} //= []}, $self->env->name;
+
 	# Get BOSH handle from environment
-	eval {
-		my $bosh = $self->env->bosh;
-		# Execute bosh deployments command
-		my ( $out, $rc, $err ) = $bosh->execute( 'deployments', '--json' );
+	my ($rows, $rc, $err) = $self->read_json_from_bosh('deployments');
+	if ($rc) {
+		info("[[ - >>#Yk{#E{warning} warning:} Could not determine child environments - only monitoring the current management environment");
+	} else {
+		for my $deployment (@$rows) {
+			my $name = $deployment->{name};
+			next unless $name;
 
-		if ( $rc == 0 && $out ) {
-			require JSON::PP;
-			my $json = JSON::PP::decode_json($out);
+			if ( $name =~ /^(.+)-bosh$/ ) {
+				push @{$self->{bosh_envs}}, $1;
+				info("[[  - >>including BOSH director environment '%s'", $1);
 
-			# We know bosh --json wraps deployments under Tables->[0].Rows
-			my $rows = $json->{Tables}[0]{Rows} || [];
-
-			for my $deployment (@$rows) {
-				my $name = $deployment->{name} // '<undef>';
-
-				if ( $name =~ /^(.+)-bosh$/ ) {
-					info("OCFP:   -> adding OCF environment '%s'", $1);
-					push @ocf_envs, $1;
-				}
-				elsif ( $name =~ /^(.+)-vault$/ ) {
-					info("OCFP:   -> adding Vault dependency '%s'", $1);
-					push $self->{vault_deps}->@*, $1;
-				}
+			}	elsif ( $name =~ /^(.+)-vault$/ ) {
+				push @{$self->{vault_envs}}, $1;
+				info("[[ - >>including vault environment '%s'", $1);
 			}
 		}
-	};
-	if ($@) {
-		warning("Failed to get BOSH deployments: $@");
-		info("Only monitoring the current management environment");
 	}
-
 	return @ocf_envs;
 }
 
-sub _render_ocfp_template {
-	my ( $self, $template_name, $env_name, $env_path, $vault_prefix ) = @_;
+# External Vault Auto-Detection {{{
+sub _get_external_vault_configs {
+	my ($self) = @_;
+	my @vault_configs = ();
 
-	my $srcdir = 'ocfp/templates';
-	my $dstdir = 'dynamic';
-	my $src    = "$srcdir/${template_name}.yml";
-	# Match bash naming convention for fqdns files
-	my $dst    = $template_name eq 'fqdns'
-		? "$dstdir/${env_name}-bosh-fqdns.yml"
-		: "$dstdir/${env_name}-${template_name}.yml";
+	my $prefixes_path = $self->env->secrets_base . "/vault/prefixes";
 
-	# Ensure dynamic directory exists in kit's working directory
-	my $kit_dynamic_dir = $self->kit->path($dstdir);
-	mkdir_or_fail($kit_dynamic_dir) unless -d $kit_dynamic_dir;
+	if ($self->env->vault->has($prefixes_path)) {
+		my $prefixes = $self->env->vault->get($prefixes_path);
 
-	# Read template and substitute variables
-	my $src_path = $self->kit->path($src);
-	my $dst_path = $self->kit->path($dst);    # Changed from $self->env->path
+		for my $name (keys %$prefixes) {
+			my $base_path = $prefixes->{$name};
+			my $vault_path = $base_path . "/" . ($name =~ s/-/\//gr);
 
-	open my $src_fh, '<', $src_path or bail("Cannot open template $src: $!");
-	open my $dst_fh, '>', $dst_path or bail("Cannot open output file $dst: $!");
+			info("OCFP:   -> adding external vault '%s' at '%s'", $name, $vault_path);
 
-	while ( my $line = <$src_fh> ) {
-		$line =~ s#\{\{OCFP_ENV_NAME\}\}#$env_name#g;
-		$line =~ s#\{\{OCFP_ENV_PATH\}\}#$env_path#g;
-		$line =~ s#\{\{OCFP_VAULT_PREFIX\}\}#$vault_prefix#g;
-		print $dst_fh $line;
-	}
-
-	close $src_fh;
-	close $dst_fh;
-
-	return $dst;
-}
-
-sub _render_fqdns_template {
-	my ( $self, $env_name, $env_path, $vault_prefix ) = @_;
-
-	# Get FQDNs from vault for both OCF and management environments
-	my @fqdns = ();
-	my $vault = $self->env->vault;
-
-	# Get the OCFP config mount path
-	my $config_mount = $self->env->ocfp_config_mount;
-
-	for my $env_type ( 'ocf', 'mgmt' ) {
-		# Use the ocfp_config_mount for the path construction
-		my $path = "${config_mount}${env_path}/${env_type}/fqdns";
-
-		# Check if path exists first
-		if ( $vault->has($path) ) {
-			my $data = $vault->get($path);
-
-			# Handle different data formats
-			if ($data) {
-				if ( ref($data) eq 'HASH' ) {
-
-					# If it's a hash, get all values
-					push @fqdns, values %$data;
-				}
-				elsif ( !ref($data) ) {
-
-					# If it's a scalar, add it directly
-					push @fqdns, $data;
-				}
-			}
+			push @vault_configs, {
+				name => $name,
+				base_path => $base_path,
+				vault_path => $vault_path
+			};
 		}
 	}
 
-	# Only render template if we found FQDNs
-	return unless @fqdns;
-
-	# Render the base template
-	my $dst = $self->_render_ocfp_template( 'fqdns', $env_name, $env_path, $vault_prefix );
-
-	# Append the FQDNs to the rendered file
-	open my $fh, '>>', $self->kit->path($dst) or bail("Cannot append to $dst: $!");
-	for my $fqdn (@fqdns) {
-		print $fh "                  - $fqdn\n";
-	}
-	close $fh;
-
-	return $dst;
+	return @vault_configs;
 }
-
 # }}}
 
-sub addon_feature {
-	my ($feature) = @_;
-	return $_addon_features->{$feature};
+sub ocfp_vault_path {
+	my ($self, $env_name, $sub_path) = @_;
+	my $vault_prefix = $self->{vault_prefixes}{$env_name} // $self->env->secrets_mount;
+	my $ocfp_env_name = $env_name =~ s/-(mgmt|ocf)$//r;
+	return "$vault_prefix$ocfp_env_name/$sub_path";
 }
 
-sub virtual_feature {
-	my ($feature) = @_;
-	return $_virtual_features->{$feature} || $feature =~ /^\+/;
+sub exodus_vault_path {
+	my ($self, $env_name, $sub_path) = @_;
+	my $vault_prefix = $self->{vault_prefixes}{$env_name} // $self->env->secrets_mount;
+	return "$vault_prefix$env_name/$sub_path";
 }
+
+sub _vault_op {
+	shift if ref($_[0]); # just in case it was called with $self->
+	return '(( vault "'.$_[0].'" ))';
+}
+
+# Data Structure Creation Methods {{{
+sub _create_credhub_content {
+	my ($self, $env_name) = @_;
+
+	return {
+		instance_groups => [{
+			name => 'doomsday',
+			jobs => [{
+				name => 'doomsday',
+				properties => {
+					backends => [
+						'(( append ))', {
+						type => 'credhub',
+						name => "${env_name}-credhub",
+						properties => {
+							address  => $self->env->vault->get($self->exodus_vault_path($env_name,'bosh:credhub_url')),
+							ca_certs => _vault_op($self->exodus_vault_path($env_name,'bosh:credhub_ca_cert')),
+							insecure_skip_verify => $self->TRUE,
+							auth => {
+								grant_type    => 'client_credentials',
+								client_id     => _vault_op($self->exodus_vault_path($env_name,'bosh:doomsday_client_id')),
+								client_secret => _vault_op($self->exodus_vault_path($env_name,'bosh:doomsday_client_secret'))
+							}
+						}}]
+				}
+			}]
+		}]
+	};
+}
+
+sub _create_vault_content {
+	my ($self, $env_name) = @_;
+
+	my $env_path = $env_name =~ s{-}{/}gr;
+	my $vault_prefix = $self->{vault_prefixes}{$env_name} // $self->env->secrets_mount;
+
+	return {
+		instance_groups => [{
+			name => 'doomsday',
+			jobs => [{
+				name => 'doomsday',
+				properties => {
+					backends => [
+						'(( append ))', {
+						type => 'vault',
+						name => "${env_name}-vault",
+						refresh_interval => 60,
+						properties => {
+							base_path => "${vault_prefix}${env_path}",
+							address => "(( vault meta.vault \"/vault:url\" ))",
+							ca_certs => "(( vault meta.vault \"/vault:ca\" ))",
+							namespace => "(( vault meta.vault \"/vault:namespace\" ))",
+							insecure_skip_verify => $self->TRUE,
+							trace => $self->TRUE,
+							auth => {
+								role_id => "(( vault meta.vault \"/vault:approle_id\" ))",
+								secret_id => "(( vault meta.vault \"/vault:approle_secret\" ))"
+							}
+						}}]}}]}]
+	};
+}
+
+sub _create_vault_ext_content {
+	my ($self, $env_name) = @_;
+
+	my $env_path = $env_name =~ s{-}{/}gr;
+	my $vault_prefix = $self->{vault_prefixes}{$env_name} // $self->env->secrets_mount;
+
+	return {
+		instance_groups => [{
+			name => 'doomsday',
+			jobs => [{
+				name => 'doomsday',
+				properties => {
+					backends => [
+						'(( append ))', {
+						type => 'vault',
+						name => "${env_name}-vault",
+						refresh_interval => 60,
+						properties => {
+							base_path => "${vault_prefix}${env_path}",
+							address => "(( vault meta.vault \"/vault:url\" ))",
+							ca_certs => "(( vault meta.vault \"/vault:ca\" ))",
+							namespace => "(( vault meta.vault \"/vault:namespace\" ))",
+							insecure_skip_verify => $self->TRUE,
+							trace => $self->TRUE,
+							auth => {
+								role_id => "(( vault meta.vault \"/vault:approle_id\" ))",
+								secret_id => "(( vault meta.vault \"/vault:approle_secret\" ))"
+							}
+						}}]}}]}]
+	};
+}
+
+sub _create_fqdns_content {
+	my ($self, $env_name) = @_;
+
+	my @fqdns = ();
+	for my $type (qw/mgmt ocf/) {
+		my $fqdn_data = $self->env->vault->get($self->ocfp_vault_path($env_name,"$type/fqdns"));
+		next unless $fqdn_data;
+		push @fqdns, values %$fqdn_data;
+	}
+
+	return {
+		instance_groups => [{
+			name => 'doomsday',
+			jobs => [{
+				name => 'doomsday',
+				properties => {
+					backends => [
+						'(( append ))', {
+						type => 'tlsclient',
+						name => "${env_name}-fqdns",
+						properties => {
+							timeout => 20,
+							hosts => @fqdns
+		}}]}}]}]
+	};
+}
+# }}}
+
+sub _add_dynamic_config {
+  my ($self, $content, $env_name, $suffix) = @_;
+
+	my $filename = "dynamic/$env_name";
+	$filename .= "-$suffix" if $suffix;
+	$filename .= ".yml" unless $filename =~ /\.yml$/;
+
+	save_to_yaml_file($content, $self->kit->path($filename));
+	$self->add_files($filename);
+}
+
+# Configuration Creation and Saving Methods {{{
+sub add_dynamic_credhub_config {
+	my ($self, $env_name) = @_;
+	$self->_add_dynamic_config(
+		$self->_create_credhub_content($env_name),
+		$env_name,
+		'credhub'
+	);
+}
+
+sub add_dynamic_vault_config {
+	my ($self, $env_name) = @_;
+
+	$self->_add_dynamic_config(
+		$self->_create_vault_content($env_name),
+		$env_name,
+		'vault'
+	)
+}
+
+sub add_dynamic_external_vault_config {
+	my ($self, $env_name) = @_;
+
+	$self->_add_dynamic_config(
+		$self->_create_vault_ext_content($env_name),
+		$env_name,
+		'vault-external'
+	);
+}
+
+sub _add_dynamic_fqdns_config {
+	my ($self, $env_name) = @_;
+
+	$self->_add_dynamic_config(
+		$self->_create_vault_ext_content($env_name),
+		$env_name,
+		'fqdn'
+	);
+}
+# }}}
 
 1;
 
