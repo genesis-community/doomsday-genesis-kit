@@ -8,8 +8,11 @@ use warnings;
 BEGIN {push @INC, $ENV{GENESIS_LIB} ? $ENV{GENESIS_LIB} : $ENV{HOME}.'/.genesis/lib'}
 use parent qw(Genesis::Hook::Addon);
 
-use Genesis qw/bail info run curl read_json_from mkfile_or_fail/;
-use Genesis::UI qw/prompt_for_boolean/;
+use Genesis qw/
+	bail info success
+	struct_set_value struct_lookup
+	curl load_yaml_file save_to_yaml_file
+/;
 use JSON::PP qw/encode_json decode_json/;
 
 sub init {
@@ -29,7 +32,7 @@ sub cmd_details {
 
 sub perform {
 	my ($self) = @_;
-	my $env = $self->env;
+	my $env_name = $self->env->name;
 
 	# Parse options
 	my %options = $self->parse_options([
@@ -41,19 +44,11 @@ sub perform {
 	my $validate_ssl = $options{'validate-ssl'} ? 1 : 0;
 
 	# Get Doomsday credentials
-	my $url = $env->exodus_lookup('url');
-	my $username = $env->exodus_lookup('admin_username');
-	my $password = $env->exodus_lookup('admin_password');
-
+	my ($url, $username, $password) = $self->exodus_data(qw(url admin_username admin_password));
 	bail("Could not retrieve Doomsday URL or credentials from exodus data")
 		unless $url && $username && $password;
 
-	# Confirm before proceeding
-	unless ($non_interactive) {
-		info("\nAbout to log into Doomsday at #C{$url} as #M{$username}.\n");
-		my $continue = prompt_for_boolean("Proceed? [y|n]", 1);
-		return $self->done(0) unless $continue;
-	}
+	info("\nLogging into Doomsday at #C{$url} as #M{$username}...\n");
 
 	my ($status, $code, $data) = curl(
 		{
@@ -80,15 +75,37 @@ sub perform {
 	my $jwt = $json->{token};
 	bail("No token found in login response") unless $jwt;
 
-	# Save token to environment
-	mkfile_or_fail(
-		"$ENV{HOME}/.doomsday_token",
-		"export DOOMSDAY_TOKEN=\"$jwt\"\n"
-	);
+	# Get the  users .dday file if it exists
+	my $dday_file = "$ENV{HOME}/.dday";
+	my $dday_data = {};
+	my $action = undef;
+	if (-e $dday_file) {
+		$dday_data = load_yaml_file($dday_file);
+	} else {
+		$action = sprintf('created ~/.dday file with %s target', $env_name);
+	}
 
-	info(
-		"\n#G{Successfully logged into Doomsday!}\n".
-		"\`source ~/.doomsday_token\` then you can use the doomsday cli.\n"
+	struct_set_value($dday_data, 'current', $env_name);
+	struct_set_value($dday_data, 'targets', []) unless exists $dday_data->{targets};
+	my $env_target_key = "targets.name=$env_name";
+	my $content = {
+		name        => $env_name,
+		address     => $url,
+		token       => $jwt,
+		skip_verify => $validate_ssl ? JSON::PP::false : JSON::PP::true,
+	};
+
+	$action //= struct_set_value($dday_data, $env_target_key, $content)
+	? sprintf('updated %s target in ~/.dday file', $env_name)
+	:	sprintf('added %s target to ~/.dday file', $env_name);
+
+	save_to_yaml_file($dday_data, $dday_file);
+
+	success(
+		"\n#g{Successfully logged into Doomsday!}\n".
+		"[[  - >>%s, and set it as current target.\n\n".
+		" Use #G{doomsday dashboard} to see current status of expiring certificates\n\n",
+		$action
 	);
 
   return $self->done($jwt);
