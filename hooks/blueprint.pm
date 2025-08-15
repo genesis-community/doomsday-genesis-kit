@@ -373,7 +373,7 @@ sub add_dynamic_fqdns_config {
 	my ($self, $env_name) = @_;
 
 	$self->_add_dynamic_config(
-		$self->_create_vault_ext_content($env_name),
+		$self->_create_fqdns_content($env_name),
 		$env_name,
 		'fqdn'
 	);
