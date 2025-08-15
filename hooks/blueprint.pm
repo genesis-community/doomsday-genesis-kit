@@ -369,7 +369,7 @@ sub add_dynamic_external_vault_config {
 	);
 }
 
-sub _add_dynamic_fqdns_config {
+sub add_dynamic_fqdns_config {
 	my ($self, $env_name) = @_;
 
 	$self->_add_dynamic_config(
