@@ -112,7 +112,7 @@ sub _process_ocfp_templates {
 	mkdir_or_fail($dynamic_dir) unless -d $dynamic_dir;
 
 	# Process BOSH director envs (Credhub, FQDNs)
-	for my $env_name ($self->bosh_envs->@*) {
+	for my $env_name ($self->{bosh_envs}->@*) {
 		my $vault_prefix = $self->{vault_prefixes}{$env_name} // $self->env->secrets_mount;
 
 		$self->_add_dynamic_credhub_config($env_name);
@@ -120,7 +120,7 @@ sub _process_ocfp_templates {
 	}
 
 	# BOSH-deployed Vault envs
-	for my $env_name (@{$self->vault_envs // []}) {
+	for my $env_name (@{$self->{vault_envs} // []}) {
 		$self->_add_dynamic_credhub_config($env_name)
 	}
 
