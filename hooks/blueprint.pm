@@ -192,13 +192,13 @@ sub ocfp_vault_path {
 	my ($self, $env_name, $sub_path) = @_;
 	my $vault_prefix = $self->{vault_prefixes}{$env_name} // $self->env->secrets_mount;
 	my $ocfp_env_name = $env_name =~ s/-(mgmt|ocf)$//r;
-	return "$vault_prefix$ocfp_env_name/$sub_path";
+	return "$vault_prefix/$ocfp_env_name/$sub_path";
 }
 
 sub exodus_vault_path {
 	my ($self, $env_name, $sub_path) = @_;
 	my $vault_prefix = $self->{vault_prefixes}{$env_name} // $self->env->secrets_mount;
-	return "$vault_prefix$env_name/$sub_path";
+	return "$vault_prefix/$env_name/$sub_path";
 }
 
 sub _vault_op {
