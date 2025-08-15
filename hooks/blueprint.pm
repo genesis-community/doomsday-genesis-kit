@@ -310,6 +310,8 @@ sub _create_fqdns_content {
 		push @fqdns, values %$fqdn_data;
 	}
 
+	return unless @fqdns;
+
 	return {
 		instance_groups => [{
 			name => 'doomsday',
@@ -330,6 +332,8 @@ sub _create_fqdns_content {
 
 sub _add_dynamic_config {
   my ($self, $content, $env_name, $suffix) = @_;
+
+	return unless $content;
 
 	my $filename = "dynamic/$env_name";
 	$filename .= "-$suffix" if $suffix;
