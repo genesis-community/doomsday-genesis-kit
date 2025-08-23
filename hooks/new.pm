@@ -1,12 +1,11 @@
-# vim: set ts=2 sw=2 sts=2 noet fdm=marker foldlevel=1:
-package Genesis::Hook::New::Doomsday;
+package Genesis::Hook::New::Doomsday v1.0.0;
 
 use v5.20;
 use warnings;
 
 # Only needed for development
 BEGIN {push @INC, $ENV{GENESIS_LIB} ? $ENV{GENESIS_LIB} : $ENV{HOME}.'/.genesis/lib'}
-use parent qw(Genesis::Hook::New);
+use parent qw(Genesis::Hook);
 
 use Genesis qw/run bail/;
 
@@ -46,3 +45,4 @@ sub perform {
 }
 
 1;
+# vim: set ts=2 sw=2 sts=2 noet fdm=marker foldlevel=1:

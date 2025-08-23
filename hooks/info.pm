@@ -1,4 +1,4 @@
-package Genesis::Hook::Info::Doomsday;
+package Genesis::Hook::Info::Doomsday v1.0.0;
 
 use v5.20;
 use warnings;

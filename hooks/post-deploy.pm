@@ -1,4 +1,4 @@
-package Genesis::Hook::PostDeploy::Doomsday;
+package Genesis::Hook::PostDeploy::Doomsday v1.0.0;
 
 use v5.20;
 use warnings;
