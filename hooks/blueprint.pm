@@ -98,9 +98,12 @@ sub process_ocfp_features {
 sub _process_ops_files {
 	my ($self) = @_;
 
-	$self->add_files_if_exists(
-		map {$self->env->path("$self->{ops_dir}/${_}.yml")} $self->features
-	);
+    for my $feature ($self->features) {
+        my $ops_file = "$self->{ops_dir}/${feature}.yml";
+        if (-f $self->env->path($ops_file)) {
+            $self->add_files($self->env->path($ops_file));
+        }
+    }
 }
 
 # OCFP Template Processing Methods {{{
