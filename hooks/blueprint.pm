@@ -203,7 +203,7 @@ sub exodus_vault_path {
 	my ($self, $env_name, $sub_path) = @_;
 	my $vault_prefix = $self->{vault_prefixes}{$env_name} // $self->env->secrets_mount;
 	# FIXME: exodus should not be hardcoded
-	return "$vault_prefix/exodus/$env_name/$sub_path";
+	return "${vault_prefix}exodus/$env_name/$sub_path";
 }
 
 sub _vault_op {
