@@ -194,16 +194,18 @@ sub _get_external_vault_configs {
 sub ocfp_vault_path {
 	my ($self, $env_name, $sub_path) = @_;
 	my $vault_prefix = $self->{vault_prefixes}{$env_name} // $self->env->secrets_mount;
+	$vault_prefix =~ s/\/+$//; # Remove trailing slash(es) if any
 	my $ocfp_env_name = $env_name =~ s/-(mgmt|ocf)$//r;
 	# FIXME: config should not be hardcoded
-	return "$vault_prefix/config/$ocfp_env_name/$sub_path";
+	return "${vault_prefix}/config/${ocfp_env_name}/${sub_path}";
 }
 
 sub exodus_vault_path {
 	my ($self, $env_name, $sub_path) = @_;
 	my $vault_prefix = $self->{vault_prefixes}{$env_name} // $self->env->secrets_mount;
+	$vault_prefix =~ s/\/+$//; # Remove trailing slash(es) if any
 	# FIXME: exodus should not be hardcoded
-	return "${vault_prefix}exodus/$env_name/$sub_path";
+	return "${vault_prefix}/exodus/${env_name}/${sub_path}";
 }
 
 sub _vault_op {
