@@ -1,5 +1,5 @@
 name:    doomsday
-version: 1.0.2
+version: 1.0.3
 author:  Norman Abramovitz <norm@starkandwayne.com>
          Wayne E. Seguin <wayneeseguin@gmail.com>
 docs:    https://github.com/cloudfoundry-community/doomsday-boshrelease
