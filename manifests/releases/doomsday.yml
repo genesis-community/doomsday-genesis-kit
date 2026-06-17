@@ -1,5 +1,5 @@
 releases:
 - name:    doomsday
-  version: 0.9.7
-  url:     https://github.com/RubidiumStudios/doomsday-boshrelease/releases/download/v0.9.7/doomsday-0.9.7.tgz
-  sha1:    d893fc9acc4c7b433fd551ca2fa13462cf1d8666
+  version: 0.9.8
+  url:     https://github.com/cloudfoundry-community/doomsday-boshrelease/releases/download/v0.9.8/doomsday-0.9.8.tgz
+  sha1:    aaa73a9ee876524c3a8a2a7374eaef0a9d874e05
