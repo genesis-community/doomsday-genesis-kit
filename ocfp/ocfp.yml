@@ -15,7 +15,7 @@ meta:
         #    network: genesis.env "-doomsday" # Used by dns for tls cert
     stemcell:
       name:    (( grab params.stemcell_name    || "default" ))
-      os:      (( grab params.stemcell_os      || "ubuntu-jammy" ))
+      os:      (( grab params.stemcell_os      || "ubuntu-noble" ))
       version: (( grab params.stemcell_version || "latest" ))
 
 params:

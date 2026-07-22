@@ -135,7 +135,7 @@ params:
   
   # VM and stemcell configuration
   vm_type: doomsday
-  stemcell_os: ubuntu-jammy
+  stemcell_os: ubuntu-noble
   
   # Disk configuration
   disk_size: 20480  # 20GB in MB

@@ -80,7 +80,7 @@ The `ocfp` feature automatically enables:
 
 #### VM and Disk Parameters
 
-- `stemcell_os` - The operating system for the Doomsday VM. Defaults to `ubuntu-jammy`.
+- `stemcell_os` - The operating system for the Doomsday VM. Defaults to `ubuntu-noble`.
 
 - `stemcell_version` - The version of the stemcell to deploy. Defaults to `latest`.
 

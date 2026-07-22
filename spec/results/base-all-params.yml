@@ -43,7 +43,7 @@ releases:
   version: 0.9.6
 stemcells:
 - alias: default
-  os: ubuntu-jammy
+  os: ubuntu-noble
   version: latest
 update:
   canaries: 1

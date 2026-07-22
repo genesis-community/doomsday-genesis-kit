@@ -36,7 +36,7 @@ params:
   
   # Optional VM customization
   vm_type: default
-  stemcell_os: ubuntu-jammy
+  stemcell_os: ubuntu-noble
   
 # Enable basic features
 features:
@@ -137,7 +137,7 @@ params:
   
   # OpenStack-specific recommendations
   vm_type: doomsday
-  stemcell_os: ubuntu-jammy
+  stemcell_os: ubuntu-noble
   
 # Enable features
 features:
@@ -165,7 +165,7 @@ params:
   
   # STACKIT-specific recommendations
   vm_type: doomsday
-  stemcell_os: ubuntu-jammy
+  stemcell_os: ubuntu-noble
   
 # Enable features
 features:
@@ -193,7 +193,7 @@ params:
   
   # vSphere-specific recommendations
   vm_type: doomsday
-  stemcell_os: ubuntu-jammy
+  stemcell_os: ubuntu-noble
   
 # Enable features
 features:
@@ -221,7 +221,7 @@ params:
   
   # GCP-specific recommendations
   vm_type: doomsday
-  stemcell_os: ubuntu-jammy
+  stemcell_os: ubuntu-noble
   
 # Enable features
 features:
