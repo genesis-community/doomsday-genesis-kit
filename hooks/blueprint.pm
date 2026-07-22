@@ -249,6 +249,13 @@ sub _create_vault_content {
 	my $env_path = $env_name =~ s{-}{/}gr;
 	my $vault_prefix = $self->{vault_prefixes}{$env_name} // $self->env->secrets_mount;
 
+	# Only reference optional connection fields when they hold a value. Empty
+	# values (e.g. no namespace on open-source Vault, or no ca when relying on
+	# insecure_skip_verify) would otherwise be entombed into Credhub, which
+	# rejects empty 'value' secrets and fails the deploy.
+	my $ns = $self->env->vault->get($self->env->secrets_base . 'vault:namespace') // '';
+	my $ca = $self->env->vault->get($self->env->secrets_base . 'vault:ca') // '';
+
 	return {
 		instance_groups => [{
 			name => 'doomsday',
@@ -263,8 +270,8 @@ sub _create_vault_content {
 						properties => {
 							base_path => "${vault_prefix}${env_path}",
 							address => "(( vault meta.vault \"/vault:url\" ))",
-							ca_certs => "(( vault meta.vault \"/vault:ca\" ))",
-							namespace => "(( vault meta.vault \"/vault:namespace\" ))",
+							($ca ne '' ? (ca_certs => "(( vault meta.vault \"/vault:ca\" ))") : ()),
+							($ns ne '' ? (namespace => "(( vault meta.vault \"/vault:namespace\" ))") : ()),
 							insecure_skip_verify => $self->TRUE,
 							trace => $self->TRUE,
 							auth => {
@@ -281,6 +288,13 @@ sub _create_vault_ext_content {
 	my $env_path = $env_name =~ s{-}{/}gr;
 	my $vault_prefix = $self->{vault_prefixes}{$env_name} // $self->env->secrets_mount;
 
+	# Only reference optional connection fields when they hold a value. Empty
+	# values (e.g. no namespace on open-source Vault, or no ca when relying on
+	# insecure_skip_verify) would otherwise be entombed into Credhub, which
+	# rejects empty 'value' secrets and fails the deploy.
+	my $ns = $self->env->vault->get($self->env->secrets_base . 'vault:namespace') // '';
+	my $ca = $self->env->vault->get($self->env->secrets_base . 'vault:ca') // '';
+
 	return {
 		instance_groups => [{
 			name => 'doomsday',
@@ -295,8 +309,8 @@ sub _create_vault_ext_content {
 						properties => {
 							base_path => "${vault_prefix}/${env_path}",
 							address => "(( vault meta.vault \"/vault:url\" ))",
-							ca_certs => "(( vault meta.vault \"/vault:ca\" ))",
-							namespace => "(( vault meta.vault \"/vault:namespace\" ))",
+							($ca ne '' ? (ca_certs => "(( vault meta.vault \"/vault:ca\" ))") : ()),
+							($ns ne '' ? (namespace => "(( vault meta.vault \"/vault:namespace\" ))") : ()),
 							insecure_skip_verify => $self->TRUE,
 							trace => $self->TRUE,
 							auth => {
