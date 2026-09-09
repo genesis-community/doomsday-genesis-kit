@@ -1,4 +1,4 @@
-package Genesis::Hook::Addon::Doomsday::SetupApprole v1.0.3;
+package Genesis::Hook::Addon::Doomsday::SetupApprole v1.0.4;
 
 use v5.20;
 use warnings; # Genesis min perl version is 5.20
@@ -22,12 +22,20 @@ sub cmd_details {
   "\n".
   "This will setup up the app roles and policies for doomsday.\n".
   "The doomsday app role will provide doomsday access to vault paths for reading\n".
-  "to check certificates.\n"
+  "to check certificates.\n".
+  "\n".
+  "Supports the following options:\n".
+  "[[  #y{--yes, -y}          >>Answer yes to every confirmation, for non-interactive runs\n";
 }
 
 sub perform {
   my ($self) = @_;
   my $env = $self->env;
+
+  my %options = $self->parse_options([
+    'yes|y', # Answer yes to every confirmation prompt
+  ]);
+  $self->{non_interactive} = $options{'yes'} ? 1 : 0;
 
   info(
     "\nThis will setup up the app roles and policies for doomsday and".
@@ -53,7 +61,7 @@ sub perform {
   }
 
   # Setup doomsday approle
-  my $create_doomsday = prompt_for_boolean("Do you want to install the #C{doomsday} app role? [Y/N]", 0);
+  my $create_doomsday = $self->_confirm("Do you want to install the #C{doomsday} app role? [Y/N]", 0);
   if ($create_doomsday) {
     $self->_setup_doomsday_approle(\@roles);
   }
@@ -68,7 +76,7 @@ sub _setup_doomsday_approle {
   # Check if role already exists
   if (grep { $_ eq $approle } @$roles_ref) {
     info("#y{[WARNING]} App role #C{$approle} already exists. This action will overwrite it...");
-    my $continue = prompt_for_boolean( "Continue?", 0);
+    my $continue = $self->_confirm("Continue?", 0);
     return 0 unless $continue;
   }
 
@@ -153,6 +161,16 @@ sub _setup_doomsday_approle {
   info("#G{[DONE]} App role #C{$approle} created.");
 
   return 1;
+}
+
+sub _confirm {
+  my ($self, $prompt, $default) = @_;
+  if ($self->{non_interactive}) {
+    (my $shown = $prompt) =~ s/\s*\[Y\/N\]\s*$//;
+    info("%s #G{yes} (--yes)", $shown);
+    return 1;
+  }
+  return prompt_for_boolean($prompt, $default);
 }
 
 sub _match_mount {
