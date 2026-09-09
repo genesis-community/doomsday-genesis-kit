@@ -1,4 +1,4 @@
-package Genesis::Hook::Addon::Doomsday::SetupApprole v1.0.4;
+package Genesis::Hook::Addon::Doomsday::SetupApprole v1.0.5;
 
 use v5.20;
 use warnings; # Genesis min perl version is 5.20
@@ -133,16 +133,20 @@ sub _setup_doomsday_approle {
 	# Deleting first if exists
   ($out,$rc,$err) = $self->vault->query("vault","delete","auth/approle/role/$approle");
 
-  my $value = $self->vault->set(
-    "auth/approle/role/$approle",
-    "secret_id_ttl", "0",
-    "token_num_uses", "0",
-    "token_period", "3600",
-    "token_ttl", "3600",
-    "token_max_ttl", "0",
-    "secret_id_num_uses", "0",
-    "policies", "doomsday"
+  # A role is API config, not a kv secret, so we write it natively: safe set
+  # would merge into a read-back whose values come back normalised (lists,
+  # integers), which the write confirmation then refuses to trust.
+  my ($role_out, $role_rc, $role_err) = $self->vault->query(
+    "vault", "write", "auth/approle/role/$approle",
+    "secret_id_ttl=0",
+    "token_num_uses=0",
+    "token_period=3600",
+    "token_ttl=3600",
+    "token_max_ttl=0",
+    "secret_id_num_uses=0",
+    "token_policies=doomsday",
   );
+  my $value = $role_rc;
 	bail("#R{[error]}\nFailed to create #C{$approle} approle.") unless ($value eq 0);
   info("#G{[ok]}");
 
