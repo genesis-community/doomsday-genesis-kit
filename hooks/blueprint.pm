@@ -310,14 +310,27 @@ sub _create_vault_ext_content {
 sub _create_fqdns_content {
 	my ($self, $env_name) = @_;
 
-	my @fqdns = ();
+	# The fqdns records hold one hostname per service plus metadata such as
+	# env_type, so only keep values that look like hostnames.
+	my %fqdns = ();
 	for my $type (qw/mgmt ocf/) {
 		my $fqdn_data = $self->env->vault->get($self->ocfp_vault_path($env_name,"$type/fqdns"));
 		next unless $fqdn_data;
-		push @fqdns, values %$fqdn_data;
+		for my $key (keys %$fqdn_data) {
+			my $value = $fqdn_data->{$key};
+			next if $key eq 'env_type';
+			next unless defined($value) && !ref($value) && $value =~ /^[a-z0-9_-]+(\.[a-z0-9_-]+)+$/i;
+			$fqdns{$value} = 1;
+		}
 	}
+	my @fqdns = sort keys %fqdns;
 
 	return undef unless @fqdns;
+
+	# Child directors in the same bloc resolve to the same fqdns records, so
+	# skip a backend that would probe an identical host list.
+	my $host_set = join(',', @fqdns);
+	return undef if $self->{fqdn_host_sets}{$host_set}++;
 
 	return {
 		instance_groups => [{
