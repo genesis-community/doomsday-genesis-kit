@@ -49,7 +49,7 @@ sub validate_ocfp_features {
 
 	$self->validate_features(
 		valid_features => [qw(
-			ocfp tls lb userpass sharded-vault-paths
+			ocfp tls lb userpass sharded-vault-paths resolute
 		)]
 	);
 }
@@ -60,7 +60,7 @@ sub validate_classic_features {
 
 	$self->validate_features(
 		valid_features => [qw(
-			tls lb userpass sharded-vault-paths
+			tls lb userpass sharded-vault-paths resolute
 		)]
 	);
 }
@@ -75,6 +75,7 @@ sub process_classic_features {
 
 	# Process ops files
 	$self->_process_ops_files();
+	$self->_process_resolute();
 
 	return $self->done();
 }
@@ -91,8 +92,32 @@ sub process_ocfp_features {
 	$self->add_files('ocfp/ocfp.yml');
 	$self->_process_ocfp_templates();
 	$self->_process_ops_files();
+	$self->_process_resolute();
 
 	return $self->done();
+}
+
+# Ubuntu resolute stemcells (opt-in; the default stays ubuntu-noble).
+# Called after every other fragment is added so that it overrides the
+# stemcell os default in both the classic and the ocfp manifests.
+sub _process_resolute {
+	my ($self) = @_;
+
+	if ($self->want_feature('resolute')) {
+		my $stemcell_os = $self->env->lookup('params.stemcell_os', 'ubuntu-resolute');
+		bail(
+			"The #c{resolute} feature sets the stemcell os to ubuntu-resolute, but " .
+			"the environment sets #c{params.stemcell_os} to #R{%s}.  " .
+			"Remove that parameter.", $stemcell_os
+		) if $stemcell_os ne 'ubuntu-resolute';
+		$self->add_files('manifests/resolute.yml');
+	} elsif ($self->env->lookup('params.stemcell_os', 'ubuntu-noble') eq 'ubuntu-resolute') {
+		bail(
+			"The environment sets #c{params.stemcell_os} to ubuntu-resolute " .
+			"without the #c{resolute} feature.  Enable the feature and remove " .
+			"that parameter."
+		);
+	}
 }
 
 sub _process_ops_files {
