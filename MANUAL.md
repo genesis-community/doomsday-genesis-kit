@@ -49,6 +49,10 @@ This Doomsday kit assumes that it is being deployed in a Management environment 
 - **tls** - Enables HTTPS for the Doomsday UI using TLS certificates. Certificates are stored in Vault.
 - **lb** - Configures Doomsday instances for use behind a load balancer. Adds necessary VM extensions.
 
+#### Stemcell Features
+
+- **resolute** - Deploys on the ubuntu-resolute stemcell instead of ubuntu-noble, and is still experimental. See [Ubuntu Resolute Stemcells](#ubuntu-resolute-stemcells).
+
 #### Storage Features
 
 - **sharded-vault-paths** - (Not recommended) Allows configuration of custom Vault path prefixes for certificate scanning. If enabled, Doomsday will read configured path prefixes from the vault environment path at `/doomsday`. These prefixes tell the Doomsday vault configuration which paths to scan for certificates.
@@ -248,6 +252,25 @@ params:
 features:
 - ocfp
 ```
+
+## Ubuntu Resolute Stemcells
+
+The kit deploys Doomsday on ubuntu-noble stemcells unless we ask for something else. Adding the `resolute` feature moves the doomsday instance group onto ubuntu-resolute, and it works the same with or without the `ocfp` feature.
+
+```yaml
+kit:
+  features:
+  - resolute
+
+params:
+  stemcell_version: "0.184"
+```
+
+The feature is experimental, so we recommend trying it on a canary deployment before we point anything real at it. It sets the stemcell `os` to `ubuntu-resolute`, and `stemcell_version` still selects the version, which defaults to `latest`. We pin it to a resolute version such as `"0.184"` so that a newer noble upload is never picked up by accident. Because the feature owns the stemcell os, the kit refuses an environment that sets `params.stemcell_os` to anything else. It also refuses an environment that sets `params.stemcell_os` to `ubuntu-resolute` without turning the feature on.
+
+Before the first deploy, we upload the resolute stemcell to the director that deploys Doomsday. The director's runtime config must also carry bosh-dns 1.39.31 or later, because earlier bosh-dns releases do not run on resolute.
+
+The kit's release is unchanged, and the kit does not deploy bpm, so the older bpm releases that fail to compile on resolute are not a concern here. Resolute ships without runit, so the `chpst` command is missing. A job whose start script drops privileges with `chpst` hangs on resolute, so we have to switch it to `setpriv` or bpm before its release can run there. We should check any job we add to the deployment for `chpst` before we move it to resolute.
 
 ## Accessing Doomsday
 

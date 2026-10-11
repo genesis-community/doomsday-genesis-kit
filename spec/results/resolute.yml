@@ -1,0 +1,42 @@
+exodus:
+  iaas: aws
+  scale: null
+  services: null
+  url: https://10.99.0.16
+  bosh: resolute
+  features: resolute
+  is_director: false
+  use_create_env: false
+instance_groups:
+- azs:
+  - z1
+  instances: 1
+  jobs:
+  - name: doomsday
+    properties:
+      debug: false
+    release: doomsday
+  name: doomsday
+  networks:
+  - name: test-network
+    static_ips:
+    - 10.99.0.16
+  stemcell: default
+  vm_type: small
+name: resolute-doomsday
+releases:
+- name: doomsday
+  sha1: aaa73a9ee876524c3a8a2a7374eaef0a9d874e05
+  url: https://github.com/cloudfoundry-community/doomsday-boshrelease/releases/download/v0.9.8/doomsday-0.9.8.tgz
+  version: 0.9.8
+stemcells:
+- alias: default
+  os: ubuntu-resolute
+  version: "0.184"
+update:
+  canaries: 1
+  canary_watch_time: 5000-600000
+  max_errors: 1
+  max_in_flight: 1
+  serial: false
+  update_watch_time: 5000-600000

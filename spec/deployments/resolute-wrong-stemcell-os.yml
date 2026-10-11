@@ -1,0 +1,14 @@
+---
+kit:
+  name:    dev
+  version: latest
+  features:
+  - resolute
+
+genesis:
+  env: resolute-wrong-stemcell-os
+
+params:
+  vm_type:     small
+  network:     test-network
+  stemcell_os: ubuntu-noble

@@ -1,0 +1,14 @@
+---
+kit:
+  name:    dev
+  version: latest
+  features:
+  - resolute
+
+genesis:
+  env: resolute
+
+params:
+  vm_type:          small
+  network:          test-network
+  stemcell_version: "0.184"

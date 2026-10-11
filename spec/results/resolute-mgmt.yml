@@ -1,0 +1,71 @@
+exodus:
+  admin_password: test-admin-password
+  admin_username: admin
+  bosh: proto-main
+  features: ocfp,resolute
+  iaas: aws
+  is_director: false
+  scale: null
+  server_crt: test-server-certificate
+  server_key: test-server-key
+  services: null
+  url: https://10.0.3.197
+  use_create_env: false
+instance_groups:
+- azs:
+  - resolute-mgmt-z2
+  instances: 1
+  jobs:
+  - name: doomsday
+    properties:
+      backends:
+      - name: resolute-mgmt-credhub
+        properties:
+          address: https://10.0.2.6:8844
+          auth:
+            client_id: doomsday
+            client_secret: test-client-secret
+            grant_type: client_credentials
+          ca_certs: test-credhub-ca
+          insecure_skip_verify: true
+        type: credhub
+      debug: false
+      server:
+        auth:
+          properties:
+            password: test-admin-password
+            refresh: true
+            timeout: 30
+            username: admin
+          type: userpass
+        port: 443
+        tls:
+          cert: test-server-certificate
+          key: test-server-key
+    release: doomsday
+  name: doomsday
+  networks:
+  - name: resolute-mgmt.doomsday.net-doomsday
+    static_ips:
+    - 10.0.3.197
+  stemcell: default
+  vm_extensions:
+  - doomsday-lb
+  vm_type: resolute-mgmt.doomsday.vm-doomsday
+name: resolute-mgmt-doomsday
+releases:
+- name: doomsday
+  sha1: aaa73a9ee876524c3a8a2a7374eaef0a9d874e05
+  url: https://github.com/cloudfoundry-community/doomsday-boshrelease/releases/download/v0.9.8/doomsday-0.9.8.tgz
+  version: 0.9.8
+stemcells:
+- alias: default
+  os: ubuntu-resolute
+  version: "0.184"
+update:
+  canaries: 1
+  canary_watch_time: 5000-600000
+  max_errors: 1
+  max_in_flight: 1
+  serial: false
+  update_watch_time: 5000-600000
