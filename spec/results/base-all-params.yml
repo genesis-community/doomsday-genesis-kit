@@ -1,7 +1,11 @@
 exodus:
+  iaas: aws
+  scale: null
+  services: null
+  url: https://10.99.0.16
   admin_password: <!{meta.vault}/users/admin:password!>
   admin_username: admin
-  bosh: some-other-env
+  bosh: base-all-params
   features: lb,tls,userpass
   is_director: false
   server_crt: <!{meta.vault}/ssl/server:certificate!>
@@ -30,17 +34,19 @@ instance_groups:
     release: doomsday
   name: doomsday
   networks:
-  - name: default
+  - name: test-network
+    static_ips:
+    - 10.99.0.16
   stemcell: default
   vm_extensions:
   - doomsday-lb
-  vm_type: default
+  vm_type: small
 name: base-all-params-doomsday
 releases:
 - name: doomsday
-  sha1: af09580cf84c862d71e56330798c469c4bba631d
-  url: https://github.com/RubidiumStudios/doomsday-boshrelease/releases/download/v0.9.6/doomsday-0.9.6.tgz
-  version: 0.9.6
+  sha1: aaa73a9ee876524c3a8a2a7374eaef0a9d874e05
+  url: https://github.com/cloudfoundry-community/doomsday-boshrelease/releases/download/v0.9.8/doomsday-0.9.8.tgz
+  version: 0.9.8
 stemcells:
 - alias: default
   os: ubuntu-noble

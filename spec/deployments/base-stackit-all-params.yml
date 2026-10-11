@@ -1,5 +1,7 @@
 ---
 kit:
+  name:    dev
+  version: latest
   features:
     - lb
     - tls
@@ -7,7 +9,6 @@ kit:
 
 genesis:
   env:      base-stackit-all-params
-  bosh_env: some-other-env
   iaas:     stackit
 
 params:

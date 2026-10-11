@@ -1,5 +1,7 @@
 ---
 kit:
+  name:    dev
+  version: latest
   features:
     - lb
     - tls
@@ -7,8 +9,10 @@ kit:
 
 genesis:
   env:      base-all-params
-  bosh_env: some-other-env
 
-params: {}
+params:
+  vm_type: small
+  network: test-network
+
 
 
