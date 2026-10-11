@@ -2,7 +2,7 @@
 meta:
   doomsday:
     network: (( grab params.network || "default" )) # Used by dns for tls cert
-    ip: (( static_ips 0 ))
+    ip: (( grab instance_groups.doomsday.networks.0.static_ips.0 ))
     azs:
       - z1
 exodus:
