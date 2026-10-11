@@ -1,0 +1,15 @@
+#!/bin/sh
+# Stand-in for the bosh CLI so the blueprint hook can list deployments
+# without a director.  Any other invocation is passed to the real bosh.
+case " $* " in
+  *" deployments "*)
+    echo '{"Tables":[{"Content":"deployments","Header":{},"Rows":[],"Notes":null}],"Blocks":null,"Lines":[]}'
+    exit 0 ;;
+  *" env "*)
+    echo '{"Tables":[{"Content":"environment","Header":{},"Rows":[{"name":"stub","uuid":"stub","version":"0","user":"admin"}],"Notes":null}],"Blocks":null,"Lines":[]}'
+    exit 0 ;;
+esac
+here=$(cd "$(dirname "$0")" && pwd)
+PATH=$(printf '%s' "$PATH" | tr ':' '\n' | grep -vxF "$here" | paste -sd: -)
+export PATH
+exec bosh "$@"
