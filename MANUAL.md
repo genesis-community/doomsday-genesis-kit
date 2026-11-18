@@ -191,7 +191,7 @@ The `tls` addon provides HTTPS support for the Doomsday UI:
 
 - Configures Doomsday to listen on port 443
 - Sets up TLS certificates from Vault
-- Exports the certificates for use by other systems
+- Exports the server certificate, but not its private key, for use by other systems
 
 This addon is added automatically when using the `ocfp` feature or explicitly with `tls`.
 

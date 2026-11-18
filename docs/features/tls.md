@@ -9,7 +9,7 @@ When enabled, the `tls` feature:
 1. Configures Doomsday to listen on port 443 (HTTPS)
 2. Sets up TLS certificates to secure communications
 3. Stores certificates in Vault for easy management
-4. Exports the certificates in the Genesis exodus data for use by other systems
+4. Exports the server certificate, but not its private key, in the Genesis exodus data for use by other systems
 
 ## Configuration
 
@@ -56,7 +56,7 @@ The TLS feature is implemented through the `manifests/addons/tls.yml` file, whic
 
 1. Retrieves certificates from Vault
 2. Configures Doomsday for TLS
-3. Adds the certificates to the deployment's exodus data
+3. Adds the server certificate to the deployment's exodus data as `server_crt`. The private key stays in the environment's secrets at `ssl/server:key`, because exodus data is readable by anything that reads the exodus mount.
 
 The certificate configuration is defined in `kit.yml`:
 
