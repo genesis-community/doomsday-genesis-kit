@@ -44,6 +44,10 @@ secret/exodus/resolute-mgmt/bosh:
   doomsday_client_id: doomsday
   doomsday_client_secret: test-client-secret
 
+secret/config/resolute/mgmt/fqdns:
+  env_type: mgmt
+  doomsday: doomsday.mgmt.resolute.example.com
+
 secret/resolute/mgmt/doomsday/users/admin:
   password: test-admin-password
 secret/resolute/mgmt/doomsday/ssl/server:

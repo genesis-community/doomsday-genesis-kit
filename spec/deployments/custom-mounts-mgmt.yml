@@ -1,0 +1,16 @@
+---
+kit:
+  name:    dev
+  version: latest
+  iaas:    aws
+  features:
+  - ocfp
+
+genesis:
+  env:               custom-mounts-mgmt
+  bosh_env:          proto-main
+  exodus_mount:      /secret/custom/exodus/
+  ocfp_config_mount: /secret/custom/config/
+
+params:
+  stemcell_version: "1.100"

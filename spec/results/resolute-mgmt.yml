@@ -29,6 +29,12 @@ instance_groups:
           ca_certs: test-credhub-ca
           insecure_skip_verify: true
         type: credhub
+      - name: resolute-mgmt-fqdns
+        properties:
+          hosts:
+          - doomsday.mgmt.resolute.example.com
+          timeout: 20
+        type: tlsclient
       debug: false
       server:
         auth:

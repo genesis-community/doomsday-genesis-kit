@@ -184,22 +184,60 @@ sub _assess_child_environments {
 	return;
 }
 
+# ocfp_vault_path - a path under a bloc's OCFP configuration {{{
+# The configuration sits under the environment's OCFP config mount, which
+# defaults to config/ under the secrets mount, in a directory named for the
+# bloc, which holds both its mgmt and ocf entries.
 sub ocfp_vault_path {
 	my ($self, $env_name, $sub_path) = @_;
-	my $vault_prefix = $self->{vault_prefixes}{$env_name} // $self->env->secrets_mount;
-	$vault_prefix =~ s/\/+$//; # Remove trailing slash(es) if any
-	my $ocfp_env_name = $env_name =~ s/-(mgmt|ocf)$//r;
-	# FIXME: config should not be hardcoded
-	return "${vault_prefix}/config/${ocfp_env_name}/${sub_path}";
+	(my $mount = $self->_vault_mount_for($env_name, $self->env->ocfp_config_mount)) =~ s{/+$}{};
+	return "${mount}/" . $self->_ocfp_bloc($env_name) . "/${sub_path}";
 }
 
+# }}}
+# exodus_vault_path - a path under another deployment's exodus data {{{
 sub exodus_vault_path {
 	my ($self, $env_name, $sub_path) = @_;
-	my $vault_prefix = $self->{vault_prefixes}{$env_name} // $self->env->secrets_mount;
-	$vault_prefix =~ s/\/+$//; # Remove trailing slash(es) if any
-	# FIXME: exodus should not be hardcoded
-	return "${vault_prefix}/exodus/${env_name}/${sub_path}";
+	(my $mount = $self->_vault_mount_for($env_name, $self->env->exodus_mount)) =~ s{/+$}{};
+	return "${mount}/${env_name}/${sub_path}";
 }
+
+# }}}
+# _vault_mount_for - a mount, moved under an environment's vault prefix {{{
+# An environment named in the vault prefixes keeps its data under that prefix
+# in place of the secrets mount, so a mount under the secrets mount moves
+# with it.  A mount outside the secrets mount is used as it is.
+sub _vault_mount_for {
+	my ($self, $env_name, $mount) = @_;
+	my $prefix = $self->{vault_prefixes}{$env_name};
+	return $mount unless defined($prefix);
+	my $secrets_mount = $self->env->secrets_mount;
+	return $mount unless index($mount, $secrets_mount) == 0;
+	$prefix =~ s{/+$}{};
+	return "${prefix}/" . substr($mount, length($secrets_mount));
+}
+
+# }}}
+# _ocfp_bloc - the directory under the OCFP config mount for an environment {{{
+# For this environment it comes from the OCFP config base, which honors
+# ocfp.bloc and params.ocfp_vault_config_slug.  Any other environment is
+# named the way Genesis names one without them, by dropping a trailing
+# -mgmt or -ocf.
+sub _ocfp_bloc {
+	my ($self, $env_name) = @_;
+	if ($env_name eq $self->env->name) {
+		my $mount = $self->env->ocfp_config_mount;
+		my $base  = $self->env->ocfp_config_base;
+		my $type  = $self->env->ocfp_type;
+		if ($type && index($base, $mount) == 0) {
+			(my $slug = substr($base, length($mount))) =~ s{/+$}{};
+			return $slug if $slug =~ s{/\Q$type\E$}{} && $slug ne '';
+		}
+	}
+	return $env_name =~ s/-(mgmt|ocf)$//r;
+}
+
+# }}}
 
 sub _vault_op {
 	shift if ref($_[0]); # just in case it was called with $self->

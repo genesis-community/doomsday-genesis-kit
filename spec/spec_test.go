@@ -48,6 +48,14 @@ var _ = Describe("Doomsday Kit", func() {
 		})
 	})
 
+	Describe("ocfp", func() {
+		Test(Environment{
+			Name:        "custom-mounts-mgmt",
+			CloudConfig: "aws-custom-mounts-mgmt",
+			CPI:         "aws",
+		})
+	})
+
 	Describe("resolute", func() {
 		Test(Environment{
 			Name:        "resolute",
