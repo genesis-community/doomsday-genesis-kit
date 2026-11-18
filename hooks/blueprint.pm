@@ -141,8 +141,6 @@ sub _process_ocfp_templates {
 
 	# Process BOSH director envs (Credhub, FQDNs)
 	for my $env_name ($self->{bosh_envs}->@*) {
-		my $vault_prefix = $self->{vault_prefixes}{$env_name} // $self->env->secrets_mount;
-
 		$self->add_dynamic_credhub_config($env_name);
 		$self->add_dynamic_fqdns_config($env_name);
 	}
@@ -161,8 +159,6 @@ sub _process_ocfp_templates {
 
 sub _assess_child_environments {
 	my ($self) = @_;
-	my @ocf_envs = ();
-
 	$self->env->notify('assessing deployed environments...');
 	push @{$self->{bosh_envs} //= []}, $self->env->name;
 
@@ -185,36 +181,8 @@ sub _assess_child_environments {
 			}
 		}
 	}
-	return @ocf_envs;
+	return;
 }
-
-# External Vault Auto-Detection {{{
-sub _get_external_vault_configs {
-	my ($self) = @_;
-	my @vault_configs = ();
-
-	my $prefixes_path = $self->env->secrets_base . "/vault/prefixes";
-
-	if ($self->env->vault->has($prefixes_path)) {
-		my $prefixes = $self->env->vault->get($prefixes_path);
-
-		for my $name (keys %$prefixes) {
-			my $base_path = $prefixes->{$name};
-			my $vault_path = $base_path . "/" . ($name =~ s/-/\//gr);
-
-			info("OCFP:   -> adding external vault '%s' at '%s'", $name, $vault_path);
-
-			push @vault_configs, {
-				name => $name,
-				base_path => $base_path,
-				vault_path => $vault_path
-			};
-		}
-	}
-
-	return @vault_configs;
-}
-# }}}
 
 sub ocfp_vault_path {
 	my ($self, $env_name, $sub_path) = @_;
