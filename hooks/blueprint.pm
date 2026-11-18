@@ -145,9 +145,9 @@ sub _process_ocfp_templates {
 		$self->add_dynamic_fqdns_config($env_name);
 	}
 
-	# BOSH-deployed Vault envs
-	for my $env_name (@{$self->{vault_envs} // []}) {
-		$self->add_dynamic_credhub_config($env_name)
+	# BOSH-deployed Vault and OpenBAO envs
+	for my $vault_env (@{$self->{vault_envs} // []}) {
+		$self->add_dynamic_vault_config(@$vault_env);
 	}
 
 	# External Vault envs
@@ -175,9 +175,9 @@ sub _assess_child_environments {
 				push @{$self->{bosh_envs}}, $1;
 				info("[[  - >>including BOSH director environment '%s'", $1);
 
-			}	elsif ( $name =~ /^(.+)-vault$/ ) {
-				push @{$self->{vault_envs}}, $1;
-				info("[[ - >>including vault environment '%s'", $1);
+			}	elsif ( $name =~ /^(.+)-(vault|openbao)$/ ) {
+				push @{$self->{vault_envs}}, [$1, $2];
+				info("[[ - >>including %s environment '%s'", $2, $1);
 			}
 		}
 	}
@@ -274,11 +274,25 @@ sub _create_credhub_content {
 	};
 }
 
+# _create_vault_content - a backend for a BOSH-deployed Vault or OpenBAO {{{
+# The vault and openbao kits create a read-only doomsday AppRole on every
+# deploy and store it, with the server's url and ca, in that deployment's
+# exodus data.  A deployment whose exodus data lacks any of them gets no
+# backend, because the manifest could not be rendered without them.
 sub _create_vault_content {
-	my ($self, $env_name) = @_;
+	my ($self, $env_name, $type) = @_;
 
-	my $env_path = $env_name =~ s{-}{/}gr;
-	my $vault_prefix = $self->{vault_prefixes}{$env_name} // $self->env->secrets_mount;
+	my $exodus = $self->exodus_vault_path($env_name, $type);
+	my @missing = grep {!$self->env->vault->has($exodus, $_)}
+		qw/url ca doomsday_approle_id doomsday_approle_secret/;
+	if (@missing) {
+		warning(
+			"Not monitoring the #C{%s} %s deployment: its exodus data at #C{%s} has no %s.  ".
+			"Redeploy it with a kit that stores the doomsday AppRole in exodus, then redeploy Doomsday.",
+			$env_name, $type, $exodus, join(', ', map {"#C{$_}"} @missing)
+		);
+		return undef;
+	}
 
 	return {
 		instance_groups => [{
@@ -289,22 +303,23 @@ sub _create_vault_content {
 					backends => [
 						'(( append ))', {
 						type => 'vault',
-						name => "${env_name}-vault",
+						name => "${env_name}-${type}",
 						refresh_interval => 60,
 						properties => {
-							base_path => "${vault_prefix}${env_path}",
-							address => "(( vault meta.vault \"/vault:url\" ))",
-							ca_certs => "(( vault meta.vault \"/vault:ca\" ))",
-							namespace => "(( vault meta.vault \"/vault:namespace\" ))",
+							# The doomsday policy both kits write grants read on secret/*
+							base_path => 'secret/',
+							address   => _vault_op("${exodus}:url"),
+							ca_certs  => _vault_op("${exodus}:ca"),
+							# The server certificate names its domain, not the IP in the url
 							insecure_skip_verify => $self->TRUE,
-							trace => $self->TRUE,
 							auth => {
-								role_id => "(( vault meta.vault \"/vault:approle_id\" ))",
-								secret_id => "(( vault meta.vault \"/vault:approle_secret\" ))"
+								role_id   => _vault_op("${exodus}:doomsday_approle_id"),
+								secret_id => _vault_op("${exodus}:doomsday_approle_secret")
 							}
 						}}]}}]}]
 	};
 }
+# }}}
 
 sub _create_vault_ext_content {
 	my ($self, $env_name) = @_;
@@ -404,15 +419,20 @@ sub add_dynamic_credhub_config {
 	);
 }
 
+# add_dynamic_vault_config - monitor a BOSH-deployed Vault or OpenBAO {{{
+# $type is the deployment type, vault or openbao, which names both the
+# exodus data and the backend.
 sub add_dynamic_vault_config {
-	my ($self, $env_name) = @_;
+	my ($self, $env_name, $type) = @_;
+	$type //= 'vault';
 
 	$self->_add_dynamic_config(
-		$self->_create_vault_content($env_name),
+		$self->_create_vault_content($env_name, $type),
 		$env_name,
-		'vault'
+		$type
 	)
 }
+# }}}
 
 sub add_dynamic_external_vault_config {
 	my ($self, $env_name) = @_;

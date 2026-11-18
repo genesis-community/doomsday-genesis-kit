@@ -46,6 +46,7 @@ When the `ocfp` feature is enabled, Doomsday will:
 3. **Scan Vault**
    - Monitor certificates in Vault paths
    - Use `sharded-vault-paths` feature if enabled, otherwise use default paths
+   - Scan every BOSH-deployed Vault or OpenBAO deployment on the director with the `doomsday` AppRole stored in that deployment's exodus data, and skip one whose exodus data lacks it
 
 4. **Integrate with Infrastructure**
    - Configure for deployment behind a load balancer
@@ -66,10 +67,9 @@ The OCFP feature works by generating several dynamic configuration files during 
    - Output: `dynamic/${env_name}-bosh-credhub.yml`
    - Purpose: Configure Doomsday to monitor Credhub certificates
 
-3. **Environment Vault Configuration**
-   - Template: `ocfp/templates/vault.yml`
-   - Output: `dynamic/${env_name}-vault.yml`
-   - Purpose: Configure Doomsday to monitor Vault certificates
+3. **BOSH-deployed Vault and OpenBAO Configuration**
+   - Output: `dynamic/${env_name}-vault.yml` or `dynamic/${env_name}-openbao.yml`
+   - Purpose: Configure Doomsday to monitor the certificates in each Vault or OpenBAO deployment, using the `url`, `ca`, `doomsday_approle_id`, and `doomsday_approle_secret` keys in its exodus data
 
 ## Example
 

@@ -1,9 +1,17 @@
 #!/bin/sh
 # Stand-in for the bosh CLI so the blueprint hook can list deployments
 # without a director.  Any other invocation is passed to the real bosh.
+# The vaults-mgmt spec sees BOSH-deployed Vault and OpenBAO deployments;
+# every other environment sees none.
 case " $* " in
   *" deployments "*)
-    echo '{"Tables":[{"Content":"deployments","Header":{},"Rows":[],"Notes":null}],"Blocks":null,"Lines":[]}'
+    case "${BOSH_DEPLOYMENT:-}" in
+      vaults-mgmt-doomsday)
+        rows='{"name":"vaults-mgmt-doomsday"},{"name":"vaults-mgmt-vault"},{"name":"vaults-ocf-openbao"},{"name":"vaults-stale-vault"}' ;;
+      *)
+        rows='' ;;
+    esac
+    echo '{"Tables":[{"Content":"deployments","Header":{},"Rows":['"$rows"'],"Notes":null}],"Blocks":null,"Lines":[]}'
     exit 0 ;;
   *" env "*)
     echo '{"Tables":[{"Content":"environment","Header":{},"Rows":[{"name":"stub","uuid":"stub","version":"0","user":"admin"}],"Notes":null}],"Blocks":null,"Lines":[]}'

@@ -54,6 +54,20 @@ var _ = Describe("Doomsday Kit", func() {
 			CloudConfig: "aws-custom-mounts-mgmt",
 			CPI:         "aws",
 		})
+		Test(Environment{
+			Name:        "vaults-mgmt",
+			CloudConfig: "aws-vaults-mgmt",
+			CPI:         "aws",
+			// The vaults-stale deployment has no doomsday approle in its
+			// exodus data, so it is skipped with a warning naming it.
+			OutputMatchers: OutputMatchers{
+				GenesisManifest: And(
+					MatchRegexp(`Not monitoring the \S*vaults-stale\S* vault deployment`),
+					ContainSubstring("doomsday_approle_secret"),
+					HaveSuffix("exited with: 0\n"),
+				),
+			},
+		})
 	})
 
 	Describe("resolute", func() {

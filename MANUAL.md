@@ -39,6 +39,7 @@ This Doomsday kit assumes that it is being deployed in a Management environment 
   - The BOSH director that deploys it to find other BOSH directors
   - Terraform outputs in Vault at paths `mgmt/fqdns` and `ocf/fqdns` to monitor certificates
   - The Vault path certificates defined in the environment
+  - Every BOSH-deployed Vault or OpenBAO deployment on its director, named `<env>-vault` or `<env>-openbao`. The vault and openbao kits create a read-only `doomsday` AppRole on each deploy and store it in that deployment's exodus data, with `url`, `ca`, `doomsday_approle_id`, and `doomsday_approle_secret`. Doomsday reads those keys and scans `secret/` on that server. A deployment whose exodus data lacks any of them is skipped with a warning, so redeploy it with a current vault or openbao kit, and then redeploy Doomsday.
 
 #### Authentication Features
 
