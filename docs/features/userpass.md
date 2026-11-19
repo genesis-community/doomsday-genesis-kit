@@ -9,7 +9,7 @@ When enabled, the `userpass` feature:
 1. Configures Doomsday to require username/password authentication
 2. Creates an admin user with credentials stored in Vault
 3. Configures session timeout and refresh settings
-4. Exports the admin username, but not the password, in the Genesis exodus data
+4. Exports the admin credentials in the Genesis exodus data
 
 ## Configuration
 
@@ -58,7 +58,7 @@ The UserPass feature is implemented through the `manifests/addons/userpass.yml` 
 1. Defines the admin username
 2. Retrieves the admin password from Vault
 3. Configures Doomsday with authentication settings
-4. Adds the admin username to the deployment's exodus data as `admin_username`. The password stays in the environment's secrets at `users/admin:password`, because exodus data is readable by anything that reads the exodus mount. The `login` addon reads the password from there, and the `open` addon and `genesis info` show that path and key in place of the password.
+4. Adds the admin credentials to the deployment's exodus data
 
 The credentials are defined in `kit.yml`:
 

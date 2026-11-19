@@ -3,6 +3,7 @@ exodus:
   scale: null
   services: null
   url: https://10.99.0.16
+  admin_password: <!{meta.vault}/users/admin:password!>
   admin_username: admin
   bosh: base-all-params
   features: lb,tls,userpass
