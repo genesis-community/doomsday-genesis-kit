@@ -1,5 +1,5 @@
 # vim: set ts=2 sw=2 sts=2 noet fdm=marker foldlevel=1:
-package Genesis::Hook::Addon::Doomsday::Login v1.0.3;
+package Genesis::Hook::Addon::Doomsday::Login v1.0.4;
 
 use v5.20;
 use warnings;
@@ -9,11 +9,17 @@ BEGIN {push @INC, $ENV{GENESIS_LIB} ? $ENV{GENESIS_LIB} : $ENV{HOME}.'/.genesis/
 use parent qw(Genesis::Hook::Addon);
 
 use Genesis qw/
-	bail info success
+	bail info run success
 	struct_set_value struct_lookup
-	curl load_yaml_file save_to_yaml_file
+	load_yaml_file save_to_yaml_file
 /;
 use JSON::PP qw/encode_json decode_json/;
+
+BEGIN {
+	require File::Basename;
+	require File::Spec;
+	require(File::Spec->rel2abs(File::Spec->catfile(File::Basename::dirname(__FILE__), '_admin.pm')));
+}
 
 sub init {
 	my $class = shift;
@@ -43,31 +49,30 @@ sub perform {
 	my $non_interactive = $options{'yes'} ? 1 : 0;
 	my $validate_ssl = $options{'validate-ssl'} ? 1 : 0;
 
-	# Get Doomsday credentials
-	my ($url, $username, $password) = $self->exodus_data(qw(url admin_username admin_password));
-	bail("Could not retrieve Doomsday URL or credentials from exodus data")
-		unless $url && $username && $password;
+	# Get Doomsday credentials.  The URL and username come from exodus, and
+	# the password from the secrets store.
+	my ($url, $username) = $self->exodus_data(qw(url admin_username));
+	bail("Could not retrieve Doomsday URL or admin username from exodus data")
+		unless $url && $username;
+	my $password = Genesis::Hook::Doomsday::Admin::admin_password($self->env, $self->vault);
 
 	info("\nLogging into Doomsday at #C{$url} as #M{$username}...\n");
 
-	my ($status, $code, $data) = curl(
-		{
-			method  => 'POST',
-			headers => {
-				'Content-Type' => 'application/json'
-			},
-			skip_verify => 1,
-			data => encode_json(
-				{
-					username => $username,
-					password => $password,
-				}
-			)
-		},
+	# The request body holds the password, so curl reads it from stdin and it
+	# never appears on a command line.  The status code follows the body.
+	my ($out, $rc, $err) = run(
+		{ stderr => 0, redact => 1, stdin => encode_json({username => $username, password => $password}) },
+		'curl', '-sSLk', '--post301', '--post302', '-X', 'POST',
+		'-H', 'Content-Type: application/json',
+		'--data-binary', '@-',
+		'-w', '\n%{http_code}',
 		"$url/v1/auth"
 	);
+	bail("Failed to reach Doomsday at #C{%s}:\n\n%s\n", $url, $err // '') if $rc;
 
-	bail("Failed to log into Doomsday:\n\n$data\n") if $status > 399;
+	my ($data, $status) = ($out // '') =~ m/\A(.*?)\n?(\d{3})\z/s;
+	bail("Failed to read the response from Doomsday at #C{%s}", $url) unless defined($status);
+	bail("Failed to log into Doomsday:\n\n%s\n", $data) if $status > 399;
 
 	my $json = eval { decode_json($data) };
 	bail("Failed to decode json token: $@\ndata:\n\n$data\n") if ($@);

@@ -5,9 +5,11 @@ meta:
   server_auth_timeout: (( grab params.server_auth_timeout || 30 ))
   server_auth_refresh: (( grab params.server_auth_refresh || true ))
 
+# Only the username is exported.  Exodus data is readable by anything that
+# reads the exodus mount, so the password stays in this environment's
+# secrets at users/admin:password, where the hooks read it.
 exodus:
   admin_username: (( grab meta.admin_username ))
-  admin_password: (( grab meta.admin_password ))
 
 instance_groups:
   - name: doomsday

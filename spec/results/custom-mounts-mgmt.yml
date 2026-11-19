@@ -1,5 +1,4 @@
 exodus:
-  admin_password: test-admin-password
   admin_username: admin
   bosh: proto-main
   features: ocfp
