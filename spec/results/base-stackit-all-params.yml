@@ -7,6 +7,7 @@ exodus:
   is_director: false
   scale: null
   server_crt: <!{meta.vault}/ssl/server:certificate!>
+  server_key: <!{meta.vault}/ssl/server:key!>
   services: null
   url: https://10.99.0.16
   use_create_env: false

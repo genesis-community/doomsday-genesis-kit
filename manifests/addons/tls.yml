@@ -3,11 +3,9 @@ meta:
   server_crt: (( vault meta.vault "/ssl/server:certificate" ))
   server_key: (( vault meta.vault "/ssl/server:key" ))
 
-# Only the certificate is exported.  Exodus data is readable by anything
-# that reads the exodus mount, so the private key stays in this
-# environment's secrets.
 exodus:
   server_crt: (( grab meta.server_crt ))
+  server_key: (( grab meta.server_key ))
 
 instance_groups:
   - name: doomsday

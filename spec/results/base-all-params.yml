@@ -9,6 +9,7 @@ exodus:
   features: lb,tls,userpass
   is_director: false
   server_crt: <!{meta.vault}/ssl/server:certificate!>
+  server_key: <!{meta.vault}/ssl/server:key!>
   use_create_env: false
 instance_groups:
 - azs:
